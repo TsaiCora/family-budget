@@ -92,7 +92,7 @@
         <div class="summary-item"><div class="label">总支出</div><div class="value negative" id="totalExpense">0</div></div>
         <div class="summary-item"><div class="label">净收益</div><div class="value neutral" id="netAmount">0</div></div>
         <div class="summary-item"><div class="label">总欠债</div><div class="value negative" id="totalDebt">0</div></div>
-        <div class="summary-item"><div class="label">实时欠款</div><div class="value warning" id="realTimeDebt">0</div></div>
+        <div class="summary-item"><div class="label">实时欠款</div><div class="value negative" id="realTimeDebt">0</div></div>
     </div>
 
     <!-- 欠债 & 还款 -->
@@ -283,9 +283,8 @@
         const sorted = [...data.debts].sort((a,b) => a.date < b.date ? 1 : -1);
         for (let d of sorted) {
             const amt = parseFloat(d.amount) || 0;
-            // 欠债显示为 -，还款显示为 -（但绿色）
             const isRepay = d.type === 'repay';
-            const sign = isRepay ? '-' : '-';
+            const sign = '-';
             const cls = isRepay ? 'repay' : 'debt';
             const icon = isRepay ? 'fa-hand-holding-heart' : 'fa-hand-holding-usd';
             const tag = isRepay ? '<span class="tag tag-repay">还款</span>' : '<span class="tag tag-debt">欠债</span>';
@@ -418,12 +417,16 @@
         const netDebt = totalDebt - totalRepay;
         const realTimeDebt = netDebt - totalIncome + totalExpense;
 
-        totalIncomeEl.textContent = `¥${totalIncome.toFixed(2)}`;
-        totalExpenseEl.textContent = `¥${totalExpense.toFixed(2)}`;
-        netAmountEl.textContent = `¥${net.toFixed(2)}`;
+        totalIncomeEl.textContent = `+ ¥${totalIncome.toFixed(2)}`;
+        totalExpenseEl.textContent = `- ¥${totalExpense.toFixed(2)}`;
+        // 净收益：正数加 + 号，负数加 - 号
+        netAmountEl.textContent = net >= 0 ? `+ ¥${net.toFixed(2)}` : `- ¥${Math.abs(net).toFixed(2)}`;
         netAmountEl.style.color = net >= 0 ? '#1e7e34' : '#c53e3e';
-        totalDebtEl.textContent = `¥${netDebt.toFixed(2)}`;
-        realTimeDebtEl.textContent = `¥${realTimeDebt.toFixed(2)}`;
+        // 总欠债显示为负
+        totalDebtEl.textContent = `- ¥${netDebt.toFixed(2)}`;
+        totalDebtEl.style.color = netDebt > 0 ? '#c53e3e' : '#1e7e34';
+        // 实时欠款显示为负
+        realTimeDebtEl.textContent = realTimeDebt > 0 ? `- ¥${realTimeDebt.toFixed(2)}` : `+ ¥${Math.abs(realTimeDebt).toFixed(2)}`;
         realTimeDebtEl.style.color = realTimeDebt > 0 ? '#c53e3e' : '#1e7e34';
     }
 
