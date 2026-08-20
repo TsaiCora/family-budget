@@ -62,11 +62,18 @@
         .btn-sm { padding: 6px 14px; font-size: 13px; flex: 0 1 auto; }
         .btn-sync { background: #1e7e34; color: white; }
         .btn-sync:hover { background: #14662a; transform: scale(0.97); }
+        .btn-import { background: #8b5cf6; color: white; }
+        .btn-import:hover { background: #6d3fd4; transform: scale(0.97); }
         .action-icon { background: transparent; border: none; color: #687c9e; cursor: pointer; padding: 4px 8px; border-radius: 30px; transition: 0.1s; }
         .action-icon:hover { background: #e9eff8; color: #1f3f6b; }
         .footer-tip { margin-top: 28px; color: #6d83a5; font-size: 13px; text-align: center; border-top: 1px solid #e4ebf5; padding-top: 20px; }
         .footer-tip i { color: #2a7de1; }
         @media (max-width: 480px) { .summary-grid { grid-template-columns: 1fr 1fr; } .form-group { flex: 1 0 100%; } .btn-group .btn { flex: 1 0 100%; } .section-title .toolbar { margin-left: 0; width: 100%; } }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: white; border-radius: 28px; padding: 24px; max-width: 400px; width: 90%; }
+        .modal-box textarea { width: 100%; height: 200px; padding: 12px; border: 1px solid #d8e0ec; border-radius: 16px; font-size: 14px; font-family: monospace; resize: vertical; }
+        .modal-box .btn-group { margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -136,10 +143,24 @@
 
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-sync btn-sm" id="syncNowBtn"><i class="fas fa-sync-alt"></i> 立即同步</button>
+        <button class="btn btn-import btn-sm" id="importDataBtn"><i class="fas fa-file-import"></i> 导入数据</button>
         <button class="btn btn-outline btn-sm" id="resetDataBtn"><i class="fas fa-trash-alt"></i> 重置</button>
         <span style="margin-left:auto;font-size:13px;color:#7b90ae;align-self:center;"><i class="fas fa-database"></i> 云端自动保存</span>
     </div>
     <div class="footer-tip"><i class="fas fa-cloud-upload-alt"></i> 数据实时同步 · 所有设备共用一份账本</div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-file-import"></i> 导入数据</h3>
+        <p style="color:#6a7f9e;font-size:13px;margin-bottom:8px;">粘贴从电脑导出的 JSON 数据：</p>
+        <textarea id="importTextarea" placeholder='{"debts":[...],"expenses":[...],"nextId":1,"categories":[...]}'></textarea>
+        <div class="btn-group">
+            <button class="btn btn-outline" id="cancelImportBtn" style="flex:1;">取消</button>
+            <button class="btn btn-import" id="confirmImportBtn" style="flex:2;"><i class="fas fa-check"></i> 确认导入</button>
+        </div>
+    </div>
 </div>
 
 <script type="importmap">
@@ -152,7 +173,6 @@
 </script>
 
 <script type="module">
-    // ----- Firebase 配置 -----
     import { initializeApp } from "firebase/app";
     import { getDatabase, ref, set, get, onValue } from "firebase/database";
 
@@ -170,7 +190,7 @@
     const database = getDatabase(app);
     const DB_PATH = 'familyBudgetData';
 
-    // ----- DOM -----
+    // DOM
     const debtContainer = document.getElementById('debtItemsContainer');
     const expenseContainer = document.getElementById('expenseItemsContainer');
     const totalDebtEl = document.getElementById('totalDebt');
@@ -191,6 +211,11 @@
     const addExpenseBtn = document.getElementById('addExpenseBtn');
     const resetBtn = document.getElementById('resetDataBtn');
     const syncNowBtn = document.getElementById('syncNowBtn');
+    const importDataBtn = document.getElementById('importDataBtn');
+    const importModal = document.getElementById('importModal');
+    const importTextarea = document.getElementById('importTextarea');
+    const cancelImportBtn = document.getElementById('cancelImportBtn');
+    const confirmImportBtn = document.getElementById('confirmImportBtn');
     const syncDot = document.getElementById('syncDot');
     const syncText = document.getElementById('syncText');
 
@@ -200,10 +225,9 @@
 
     function setSyncStatus(status, msg) {
         syncDot.className = 'dot';
-        if (status === 'online') { syncDot.classList.add('online'); syncText.textContent = msg || '已连接 · 实时同步'; }
+        if (status === 'online' || status === 'saved') { syncDot.classList.add('online'); syncText.textContent = msg || '已连接 · 实时同步'; }
         else if (status === 'offline') { syncDot.classList.add('offline'); syncText.textContent = msg || '离线 · 数据保存在本地'; }
         else if (status === 'syncing') { syncDot.classList.add('syncing'); syncText.textContent = msg || '同步中...'; }
-        else if (status === 'saved') { syncDot.classList.add('online'); syncText.textContent = msg || '已保存 · ' + new Date().toLocaleTimeString(); }
         else { syncDot.classList.add('online'); syncText.textContent = msg || '已连接'; }
     }
 
@@ -211,15 +235,8 @@
         isSyncing = true;
         setSyncStatus('syncing', '正在保存...');
         set(ref(database, DB_PATH), data)
-            .then(() => {
-                setSyncStatus('saved', '已保存 · ' + new Date().toLocaleTimeString());
-                isSyncing = false;
-            })
-            .catch((err) => {
-                console.error('保存失败:', err);
-                setSyncStatus('offline', '保存失败，请检查网络');
-                isSyncing = false;
-            });
+            .then(() => { setSyncStatus('saved', '已保存 · ' + new Date().toLocaleTimeString()); isSyncing = false; })
+            .catch(() => { setSyncStatus('offline', '保存失败'); isSyncing = false; });
         localStorage.setItem('family_budget_cache', JSON.stringify(data));
     }
 
@@ -236,21 +253,12 @@
                     return;
                 }
             }
-            // 没有数据或数据无效，初始化
-            initializeFirebaseData();
-        }).catch((err) => {
-            console.error('加载失败:', err);
+            // 没有数据，尝试从 localStorage 加载
+            loadFromLocalStorage();
+        }).catch(() => {
             setSyncStatus('offline', '离线模式 · 使用本地缓存');
             loadFromLocalStorage();
         });
-    }
-
-    function initializeFirebaseData() {
-        const defaultData = { debts: [], expenses: [], nextId: 1, categories: categories };
-        appData = defaultData;
-        saveToFirebase(defaultData);
-        renderAll();
-        setSyncStatus('saved', '已初始化 · 开始记账吧！');
     }
 
     function loadFromLocalStorage() {
@@ -262,6 +270,7 @@
                     appData = data;
                     if (data.categories) categories = data.categories;
                     renderAll();
+                    setSyncStatus('online', '本地数据已加载');
                     return;
                 }
             }
@@ -281,10 +290,7 @@
                     setSyncStatus('saved', '已更新 · ' + new Date().toLocaleTimeString());
                 }
             }
-        }, (error) => {
-            console.error('监听失败:', error);
-            setSyncStatus('offline', '连接中断');
-        });
+        }, () => {});
     }
 
     function renderAll() {
@@ -470,10 +476,44 @@
                 }
             }
             setSyncStatus('online', '云端无数据，使用本地数据');
-        }).catch((err) => {
-            console.error('同步失败:', err);
+        }).catch(() => {
             setSyncStatus('offline', '同步失败，请检查网络');
         });
+    }
+
+    // 导入数据功能
+    function openImportModal() {
+        importModal.classList.add('active');
+        importTextarea.value = '';
+        importTextarea.focus();
+    }
+
+    function closeImportModal() {
+        importModal.classList.remove('active');
+    }
+
+    function confirmImport() {
+        const rawData = importTextarea.value.trim();
+        if (!rawData) {
+            alert('请粘贴数据');
+            return;
+        }
+        try {
+            const data = JSON.parse(rawData);
+            if (!data.debts || !data.expenses || typeof data.nextId !== 'number') {
+                alert('❌ 数据格式无效，请确保是完整的 JSON 备份');
+                return;
+            }
+            appData = data;
+            if (data.categories) categories = data.categories;
+            saveToFirebase(appData);
+            renderAll();
+            closeImportModal();
+            setSyncStatus('saved', '导入成功！数据已保存');
+            alert('✅ 数据导入成功！');
+        } catch (e) {
+            alert('❌ 数据格式错误，请检查 JSON 是否完整');
+        }
     }
 
     function setDefaultDates() {
@@ -482,12 +522,17 @@
         if (!expenseDate.value) expenseDate.value = today;
     }
 
-    // ----- 绑定事件 -----
+    // 事件绑定
     addDebtBtn.addEventListener('click', addDebt);
     addRepayBtn.addEventListener('click', addRepay);
     addExpenseBtn.addEventListener('click', addExpense);
     resetBtn.addEventListener('click', resetData);
     syncNowBtn.addEventListener('click', syncNow);
+    importDataBtn.addEventListener('click', openImportModal);
+    cancelImportBtn.addEventListener('click', closeImportModal);
+    confirmImportBtn.addEventListener('click', confirmImport);
+    importModal.addEventListener('click', (e) => { if (e.target === importModal) closeImportModal(); });
+
     document.getElementById('debtAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addDebt(); });
     document.getElementById('expenseAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addExpense(); });
 
@@ -519,12 +564,12 @@
         }
     });
 
-    // ----- 启动 -----
+    // 启动
     setDefaultDates();
     loadFromFirebase();
     listenFirebaseChanges();
 
-    console.log('✅ 家庭记账 · 云端同步 v2 已启动！');
+    console.log('✅ 家庭记账 · 云端同步 v3 已启动！');
 </script>
 </body>
 </html>
