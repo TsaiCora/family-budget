@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>家庭记账 · 云同步</title>
+    <title>家庭记账 · 收支云同步</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
@@ -17,63 +17,83 @@
         .sync-status .dot.online { background:#1e7e34; }
         .sync-status .dot.syncing { background:#f5a623; animation:pulse 0.8s infinite; }
         @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; background:#f0f5ff; padding:16px 12px; border-radius:28px; margin-bottom:28px; }
+        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; background:#f0f5ff; padding:14px 12px; border-radius:28px; margin-bottom:28px; }
         .summary-item { text-align:center; }
-        .summary-item .label { font-size:12px; font-weight:500; color:#4f658a; }
-        .summary-item .value { font-size:22px; font-weight:700; color:#0b1b33; margin-top:4px; }
+        .summary-item .label { font-size:11px; font-weight:500; color:#4f658a; }
+        .summary-item .value { font-size:18px; font-weight:700; color:#0b1b33; margin-top:2px; }
         .summary-item .value.positive { color:#1e7e34; }
         .summary-item .value.negative { color:#c53e3e; }
         .summary-item .value.neutral { color:#2a4b7a; }
-        .section-title { font-size:18px; font-weight:600; color:#1f2b44; display:flex; align-items:center; gap:10px; margin:28px 0 16px 0; }
+        .section-title { font-size:18px; font-weight:600; color:#1f2b44; display:flex; align-items:center; gap:10px; margin:24px 0 14px 0; }
         .section-title i { color:#2a7de1; width:24px; text-align:center; }
         .section-title .badge { background:#dbe7f9; color:#1f3a6b; font-size:13px; font-weight:500; padding:2px 12px; border-radius:40px; }
-        .card { background:#ffffff; border-radius:24px; padding:18px 16px; border:1px solid #e8edf5; margin-bottom:18px; }
-        .debt-item, .expense-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eef2f9; }
-        .debt-item:last-child, .expense-item:last-child { border-bottom:none; }
-        .item-left { display:flex; flex-direction:column; gap:4px; flex:1; }
-        .item-title { font-weight:600; color:#14273e; font-size:16px; }
-        .item-meta { font-size:13px; color:#6a7f9e; display:flex; flex-wrap:wrap; gap:10px; }
-        .item-amount { font-weight:650; font-size:17px; }
-        .item-amount.positive { color:#1e7e34; }
-        .item-amount.negative { color:#b13e3e; }
-        .empty-message { color:#8a9bb8; font-size:15px; padding:12px 0; text-align:center; }
-        .form-row { display:flex; flex-wrap:wrap; gap:12px 8px; margin:12px 0 6px; }
-        .form-group { flex:1 0 calc(50% - 8px); min-width:150px; }
-        .form-group label { display:block; font-size:13px; font-weight:500; color:#2d4468; margin-bottom:4px; }
-        .form-group input, .form-group select { width:100%; padding:12px 14px; border:1px solid #d8e0ec; border-radius:18px; font-size:15px; background:white; outline:none; }
-        .form-group input:focus, .form-group select:focus { border-color:#2a7de1; box-shadow:0 0 0 3px rgba(42,125,225,0.15); }
-        .btn-group { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
-        .btn { border:none; padding:12px 24px; border-radius:40px; font-weight:600; font-size:15px; display:inline-flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; transition:0.15s; flex:1 0 auto; background:#eef3fc; color:#1d3a66; }
+        .card { background:#ffffff; border-radius:24px; padding:18px 16px; border:1px solid #e8edf5; margin-bottom:16px; }
+        .record-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eef2f9; }
+        .record-item:last-child { border-bottom:none; }
+        .item-left { display:flex; flex-direction:column; gap:3px; flex:1; }
+        .item-title { font-weight:600; color:#14273e; font-size:15px; }
+        .item-meta { font-size:12px; color:#6a7f9e; display:flex; flex-wrap:wrap; gap:8px; }
+        .item-meta i { margin-right:3px; }
+        .item-amount { font-weight:650; font-size:16px; }
+        .item-amount.income { color:#1e7e34; }
+        .item-amount.expense { color:#c53e3e; }
+        .item-amount.debt { color:#b13e3e; }
+        .item-amount.repay { color:#1e7e34; }
+        .empty-message { color:#8a9bb8; font-size:14px; padding:10px 0; text-align:center; }
+        .form-row { display:flex; flex-wrap:wrap; gap:10px 6px; margin:10px 0 4px; }
+        .form-group { flex:1 0 calc(50% - 6px); min-width:140px; }
+        .form-group label { display:block; font-size:12px; font-weight:500; color:#2d4468; margin-bottom:3px; }
+        .form-group input, .form-group select { width:100%; padding:10px 14px; border:1px solid #d8e0ec; border-radius:16px; font-size:14px; background:white; outline:none; }
+        .form-group input:focus, .form-group select:focus { border-color:#2a7de1; box-shadow:0 0 0 3px rgba(42,125,225,0.12); }
+        .btn-group { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+        .btn { border:none; padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:0.15s; flex:1 0 auto; background:#eef3fc; color:#1d3a66; }
         .btn-primary { background:#1a3f77; color:white; }
         .btn-primary:hover { background:#12315e; }
         .btn-success { background:#1b7e3a; color:white; }
         .btn-success:hover { background:#13662e; }
+        .btn-warning { background:#d48c2c; color:white; }
+        .btn-warning:hover { background:#b87822; }
+        .btn-danger { background:#b13e3e; color:white; }
+        .btn-danger:hover { background:#942f2f; }
         .btn-outline { background:transparent; border:1px solid #c6d3e8; }
         .btn-outline:hover { background:#eaf0fa; }
-        .btn-sm { padding:6px 14px; font-size:13px; flex:0 1 auto; }
+        .btn-sm { padding:5px 12px; font-size:12px; flex:0 1 auto; }
         .action-icon { background:transparent; border:none; color:#687c9e; cursor:pointer; padding:4px 8px; border-radius:30px; }
         .action-icon:hover { background:#e9eff8; color:#1f3f6b; }
-        .footer-tip { margin-top:28px; color:#6d83a5; font-size:13px; text-align:center; border-top:1px solid #e4ebf5; padding-top:20px; }
+        .footer-tip { margin-top:24px; color:#6d83a5; font-size:13px; text-align:center; border-top:1px solid #e4ebf5; padding-top:16px; }
+        .tab-group { display:flex; gap:4px; margin-bottom:12px; background:#eef3fc; border-radius:40px; padding:4px; }
+        .tab-btn { flex:1; padding:8px 12px; border:none; border-radius:30px; font-weight:600; font-size:13px; cursor:pointer; background:transparent; color:#4f658a; transition:0.2s; }
+        .tab-btn.active { background:white; color:#1a3f77; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
         @media (max-width:480px) { .summary-grid { grid-template-columns:1fr 1fr; } .form-group { flex:1 0 100%; } .btn-group .btn { flex:1 0 100%; } }
+        .tag { display:inline-block; font-size:10px; padding:1px 10px; border-radius:30px; font-weight:500; }
+        .tag-income { background:#d4edda; color:#1e7e34; }
+        .tag-expense { background:#f8dddd; color:#b13e3e; }
+        .tag-debt { background:#fce4d6; color:#b13e3e; }
+        .tag-repay { background:#d4edda; color:#1e7e34; }
     </style>
 </head>
 <body>
 <div class="app-container">
     <header>
         <h1><i class="fas fa-cloud"></i> 家庭共记</h1>
-        <div class="subhead"><i class="fas fa-users"></i> 自动云端同步 · 所有设备共用</div>
+        <div class="subhead"><i class="fas fa-users"></i> 收支 · 欠债 · 云端同步</div>
         <div class="sync-status" id="syncStatus">
             <span class="dot online" id="syncDot"></span>
             <span id="syncText">加载中...</span>
         </div>
     </header>
 
+    <!-- 汇总 -->
     <div class="summary-grid">
+        <div class="summary-item"><div class="label">总收入</div><div class="value positive" id="totalIncome">0</div></div>
+        <div class="summary-item"><div class="label">总支出</div><div class="value negative" id="totalExpense">0</div></div>
+        <div class="summary-item"><div class="label">净收益</div><div class="value neutral" id="netAmount">0</div></div>
         <div class="summary-item"><div class="label">总欠债</div><div class="value negative" id="totalDebt">0</div></div>
-        <div class="summary-item"><div class="label">已还款</div><div class="value neutral" id="totalRepay">0</div></div>
-        <div class="summary-item"><div class="label">总支出</div><div class="value positive" id="totalExpense">0</div></div>
     </div>
 
+    <!-- 欠债 & 还款 -->
     <div class="section-title"><i class="fas fa-file-invoice"></i> 欠债 & 还款 <span class="badge" id="debtCount">0</span></div>
     <div class="card"><div id="debtItemsContainer"><div class="empty-message">暂无欠债记录</div></div></div>
 
@@ -92,23 +112,85 @@
         </div>
     </div>
 
-    <div class="section-title"><i class="fas fa-receipt"></i> 日常支出 <span class="badge" id="expenseCount">0</span></div>
-    <div class="card"><div id="expenseItemsContainer"><div class="empty-message">暂无支出记录</div></div></div>
+    <!-- 收支选项卡 -->
+    <div class="section-title"><i class="fas fa-coins"></i> 收支记录 <span class="badge" id="recordCount">0</span></div>
 
-    <div class="card" style="background:#f6faff;">
+    <div class="tab-group">
+        <button class="tab-btn active" data-tab="incomeTab"><i class="fas fa-arrow-up"></i> 收入</button>
+        <button class="tab-btn" data-tab="expenseTab"><i class="fas fa-arrow-down"></i> 支出</button>
+        <button class="tab-btn" data-tab="allTab"><i class="fas fa-list"></i> 全部</button>
+    </div>
+
+    <div id="incomeTab" class="tab-content active">
+        <div class="card" id="incomeList"><div class="empty-message">暂无收入记录</div></div>
+    </div>
+    <div id="expenseTab" class="tab-content">
+        <div class="card" id="expenseList"><div class="empty-message">暂无支出记录</div></div>
+    </div>
+    <div id="allTab" class="tab-content">
+        <div class="card" id="allList"><div class="empty-message">暂无记录</div></div>
+    </div>
+
+    <!-- 添加收入 -->
+    <div class="card" style="background:#f0faf2;border-color:#b8d9c4;">
+        <div style="font-weight:600;color:#1e7e34;margin-bottom:6px;"><i class="fas fa-arrow-up"></i> 添加收入</div>
+        <div class="form-row">
+            <div class="form-group"><label>来源</label><input type="text" id="incomeSource" value="工资"></div>
+            <div class="form-group">
+                <label>类别</label>
+                <select id="incomeCategory">
+                    <option value="工资">工资</option>
+                    <option value="奖金">奖金</option>
+                    <option value="红包">红包</option>
+                    <option value="投资收益">投资收益</option>
+                    <option value="兼职">兼职</option>
+                    <option value="退款">退款</option>
+                    <option value="其他收入">其他收入</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>金额</label><input type="number" id="incomeAmount" min="0.01" step="0.01" value="100"></div>
+            <div class="form-group"><label>日期</label><input type="date" id="incomeDate"></div>
+        </div>
+        <button class="btn btn-success" id="addIncomeBtn"><i class="fas fa-plus-circle"></i> 添加收入</button>
+    </div>
+
+    <!-- 添加支出 -->
+    <div class="card" style="background:#faf0f0;border-color:#e8c8c8;">
+        <div style="font-weight:600;color:#b13e3e;margin-bottom:6px;"><i class="fas fa-arrow-down"></i> 添加支出</div>
         <div class="form-row">
             <div class="form-group"><label>支出人</label><input type="text" id="expensePayer" value="家人"></div>
-            <div class="form-group"><label>类别</label><input type="text" id="expenseCategory" value="餐饮"></div>
+            <div class="form-group">
+                <label>类别</label>
+                <select id="expenseCategory">
+                    <option value="餐饮">🍜 餐饮</option>
+                    <option value="购物">🛍️ 购物</option>
+                    <option value="交通">🚗 交通</option>
+                    <option value="娱乐">🎮 娱乐</option>
+                    <option value="医疗">🏥 医疗</option>
+                    <option value="教育">📚 教育</option>
+                    <option value="人情">🎁 人情</option>
+                    <option value="服饰">👗 服饰</option>
+                    <option value="日用品">🧴 日用品</option>
+                    <option value="房租">🏠 房租</option>
+                    <option value="水电">💡 水电</option>
+                    <option value="通讯">📱 通讯</option>
+                    <option value="保险">🛡️ 保险</option>
+                    <option value="旅游">✈️ 旅游</option>
+                    <option value="宠物">🐾 宠物</option>
+                    <option value="其他支出">📌 其他</option>
+                </select>
+            </div>
         </div>
         <div class="form-row">
             <div class="form-group"><label>金额</label><input type="number" id="expenseAmount" min="0.01" step="0.01" value="50"></div>
             <div class="form-group"><label>日期</label><input type="date" id="expenseDate"></div>
         </div>
-        <div class="btn-group">
-            <button class="btn btn-primary" id="addExpenseBtn"><i class="fas fa-plus-circle"></i> 添加支出</button>
-        </div>
+        <button class="btn btn-danger" id="addExpenseBtn"><i class="fas fa-plus-circle"></i> 添加支出</button>
     </div>
 
+    <!-- 操作 -->
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" id="resetBtn"><i class="fas fa-trash-alt"></i> 重置</button>
         <span style="margin-left:auto;font-size:13px;color:#7b90ae;align-self:center;"><i class="fas fa-database"></i> 云端自动保存</span>
@@ -144,16 +226,19 @@
 
     // DOM
     const debtContainer = document.getElementById('debtItemsContainer');
-    const expenseContainer = document.getElementById('expenseItemsContainer');
-    const totalDebtEl = document.getElementById('totalDebt');
-    const totalRepayEl = document.getElementById('totalRepay');
+    const incomeContainer = document.getElementById('incomeList');
+    const expenseContainer = document.getElementById('expenseList');
+    const allContainer = document.getElementById('allList');
+    const totalIncomeEl = document.getElementById('totalIncome');
     const totalExpenseEl = document.getElementById('totalExpense');
+    const netAmountEl = document.getElementById('netAmount');
+    const totalDebtEl = document.getElementById('totalDebt');
     const debtCountEl = document.getElementById('debtCount');
-    const expenseCountEl = document.getElementById('expenseCount');
+    const recordCountEl = document.getElementById('recordCount');
     const syncDot = document.getElementById('syncDot');
     const syncText = document.getElementById('syncText');
 
-    let data = { debts: [], expenses: [], nextId: 1 };
+    let data = { debts: [], incomes: [], expenses: [], nextId: 1 };
     let isSyncing = false;
 
     function setStatus(msg, type = 'online') {
@@ -164,10 +249,12 @@
 
     function render() {
         renderDebts();
+        renderIncomes();
         renderExpenses();
+        renderAll();
         updateSummary();
         debtCountEl.textContent = data.debts.length;
-        expenseCountEl.textContent = data.expenses.length;
+        recordCountEl.textContent = data.incomes.length + data.expenses.length;
     }
 
     function renderDebts() {
@@ -180,14 +267,14 @@
         for (let d of sorted) {
             const amt = parseFloat(d.amount) || 0;
             const sign = d.type === 'repay' ? '-' : '+';
-            const cls = d.type === 'repay' ? 'positive' : 'negative';
+            const cls = d.type === 'repay' ? 'repay' : 'debt';
             const icon = d.type === 'repay' ? 'fa-hand-holding-heart' : 'fa-hand-holding-usd';
-            const label = d.type === 'repay' ? '还款' : '欠债';
+            const tag = d.type === 'repay' ? '<span class="tag tag-repay">还款</span>' : '<span class="tag tag-debt">欠债</span>';
             html += `
-                <div class="debt-item" data-id="${d.id}">
+                <div class="record-item" data-id="${d.id}">
                     <div class="item-left">
-                        <div class="item-title"><i class="fas ${icon}" style="margin-right:6px;color:#2a7de1;"></i>${d.debtor || '无名'} · ${d.reason || '无备注'}</div>
-                        <div class="item-meta"><span>${d.date || ''}</span><span>${label}</span></div>
+                        <div class="item-title"><i class="fas ${icon}" style="margin-right:6px;color:#2a7de1;"></i>${d.debtor || '无名'} · ${d.reason || '无备注'} ${tag}</div>
+                        <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${d.date || ''}</span></div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span class="item-amount ${cls}">${sign} ¥${amt.toFixed(2)}</span>
@@ -205,6 +292,37 @@
         });
     }
 
+    function renderIncomes() {
+        if (data.incomes.length === 0) {
+            incomeContainer.innerHTML = '<div class="empty-message">暂无收入记录</div>';
+            return;
+        }
+        let html = '';
+        const sorted = [...data.incomes].sort((a,b) => a.date < b.date ? 1 : -1);
+        for (let d of sorted) {
+            const amt = parseFloat(d.amount) || 0;
+            html += `
+                <div class="record-item" data-id="${d.id}">
+                    <div class="item-left">
+                        <div class="item-title"><i class="fas fa-arrow-up" style="margin-right:6px;color:#1e7e34;"></i>${d.source || '未知'} · ${d.category || '其他'} <span class="tag tag-income">收入</span></div>
+                        <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${d.date || ''}</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="item-amount income">+ ¥${amt.toFixed(2)}</span>
+                        <button class="action-icon" data-id="${d.id}" data-action="deleteIncome"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+        incomeContainer.innerHTML = html;
+        incomeContainer.querySelectorAll('[data-action="deleteIncome"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                if (confirm('确定删除？')) deleteIncome(id);
+            });
+        });
+    }
+
     function renderExpenses() {
         if (data.expenses.length === 0) {
             expenseContainer.innerHTML = '<div class="empty-message">暂无支出记录</div>';
@@ -212,17 +330,17 @@
         }
         let html = '';
         const sorted = [...data.expenses].sort((a,b) => a.date < b.date ? 1 : -1);
-        for (let e of sorted) {
-            const amt = parseFloat(e.amount) || 0;
+        for (let d of sorted) {
+            const amt = parseFloat(d.amount) || 0;
             html += `
-                <div class="expense-item" data-id="${e.id}">
+                <div class="record-item" data-id="${d.id}">
                     <div class="item-left">
-                        <div class="item-title"><i class="fas fa-user" style="margin-right:6px;color:#2a7de1;"></i>${e.payer || '未知'} · ${e.category || '其他'}</div>
-                        <div class="item-meta"><span>${e.date || ''}</span></div>
+                        <div class="item-title"><i class="fas fa-arrow-down" style="margin-right:6px;color:#b13e3e;"></i>${d.payer || '未知'} · ${d.category || '其他'} <span class="tag tag-expense">支出</span></div>
+                        <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${d.date || ''}</span></div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="item-amount positive">- ¥${amt.toFixed(2)}</span>
-                        <button class="action-icon" data-id="${e.id}" data-action="deleteExpense"><i class="fas fa-trash-alt"></i></button>
+                        <span class="item-amount expense">- ¥${amt.toFixed(2)}</span>
+                        <button class="action-icon" data-id="${d.id}" data-action="deleteExpense"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
             `;
@@ -236,24 +354,60 @@
         });
     }
 
+    function renderAll() {
+        const all = [...data.incomes.map(d => ({...d, _type: 'income'})), ...data.expenses.map(d => ({...d, _type: 'expense'}))];
+        all.sort((a,b) => a.date < b.date ? 1 : -1);
+        if (all.length === 0) {
+            allContainer.innerHTML = '<div class="empty-message">暂无记录</div>';
+            return;
+        }
+        let html = '';
+        for (let d of all) {
+            const amt = parseFloat(d.amount) || 0;
+            const isIncome = d._type === 'income';
+            const icon = isIncome ? 'fa-arrow-up' : 'fa-arrow-down';
+            const cls = isIncome ? 'income' : 'expense';
+            const sign = isIncome ? '+ ' : '- ';
+            const label = isIncome ? (d.source || '收入') : (d.payer || '支出');
+            const cat = isIncome ? d.category : d.category;
+            const tag = isIncome ? '<span class="tag tag-income">收入</span>' : '<span class="tag tag-expense">支出</span>';
+            html += `
+                <div class="record-item">
+                    <div class="item-left">
+                        <div class="item-title"><i class="fas ${icon}" style="margin-right:6px;color:${isIncome ? '#1e7e34' : '#b13e3e'};"></i>${label} · ${cat} ${tag}</div>
+                        <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${d.date || ''}</span></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="item-amount ${cls}">${sign}¥${amt.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        allContainer.innerHTML = html;
+    }
+
     function updateSummary() {
+        const totalIncome = data.incomes.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const totalExpense = data.expenses.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const net = totalIncome - totalExpense;
         let totalDebt = 0, totalRepay = 0;
         for (let d of data.debts) {
             const amt = parseFloat(d.amount) || 0;
             if (d.type === 'debt') totalDebt += amt;
             else if (d.type === 'repay') totalRepay += amt;
         }
-        const totalExpense = data.expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-        totalDebtEl.textContent = `¥${(totalDebt - totalRepay).toFixed(2)}`;
-        totalRepayEl.textContent = `¥${totalRepay.toFixed(2)}`;
+        totalIncomeEl.textContent = `¥${totalIncome.toFixed(2)}`;
         totalExpenseEl.textContent = `¥${totalExpense.toFixed(2)}`;
+        netAmountEl.textContent = `¥${net.toFixed(2)}`;
+        netAmountEl.style.color = net >= 0 ? '#1e7e34' : '#c53e3e';
+        totalDebtEl.textContent = `¥${(totalDebt - totalRepay).toFixed(2)}`;
     }
 
     function saveToFirebase() {
         setStatus('正在保存...', 'syncing');
         set(ref(db, '记账数据'), data)
             .then(() => setStatus('✅ 已保存 ' + new Date().toLocaleTimeString()))
-            .catch(() => setStatus('❌ 保存失败，请检查网络'));
+            .catch(() => setStatus('❌ 保存失败'));
     }
 
     function loadFromFirebase() {
@@ -262,19 +416,19 @@
             if (snapshot.exists()) {
                 data = snapshot.val();
                 if (!data.debts) data.debts = [];
+                if (!data.incomes) data.incomes = [];
                 if (!data.expenses) data.expenses = [];
                 if (!data.nextId) data.nextId = 1;
                 render();
                 setStatus('✅ 已同步 ' + new Date().toLocaleTimeString());
             } else {
-                // 云端无数据，初始化
-                data = { debts: [], expenses: [], nextId: 1 };
+                data = { debts: [], incomes: [], expenses: [], nextId: 1 };
                 render();
                 saveToFirebase();
-                setStatus('☁️ 云端无数据，已初始化');
+                setStatus('☁️ 已初始化');
             }
         }).catch(() => {
-            setStatus('⚠️ 离线模式，数据保存在本地');
+            setStatus('⚠️ 离线模式');
         });
     }
 
@@ -282,7 +436,7 @@
         onValue(ref(db, '记账数据'), (snapshot) => {
             if (snapshot.exists() && !isSyncing) {
                 const newData = snapshot.val();
-                if (newData.debts && newData.expenses) {
+                if (newData.debts && newData.incomes !== undefined && newData.expenses !== undefined) {
                     data = newData;
                     render();
                     setStatus('🔄 已更新 ' + new Date().toLocaleTimeString());
@@ -291,18 +445,9 @@
         });
     }
 
-    // 操作函数
-    function deleteDebt(id) {
-        data.debts = data.debts.filter(d => d.id !== id);
-        saveToFirebase();
-        render();
-    }
-
-    function deleteExpense(id) {
-        data.expenses = data.expenses.filter(e => e.id !== id);
-        saveToFirebase();
-        render();
-    }
+    function deleteDebt(id) { data.debts = data.debts.filter(d => d.id !== id); saveToFirebase(); render(); }
+    function deleteIncome(id) { data.incomes = data.incomes.filter(d => d.id !== id); saveToFirebase(); render(); }
+    function deleteExpense(id) { data.expenses = data.expenses.filter(d => d.id !== id); saveToFirebase(); render(); }
 
     function addDebt() {
         const debtor = document.getElementById('debtorName').value.trim() || '家人';
@@ -312,11 +457,8 @@
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.debts.push({ id: data.nextId++, debtor, reason, amount, date, type: 'debt' });
-        saveToFirebase();
-        render();
-        isSyncing = false;
+        saveToFirebase(); render(); isSyncing = false;
         document.getElementById('debtAmount').value = '';
-        document.getElementById('debtorName').focus();
     }
 
     function addRepay() {
@@ -327,56 +469,71 @@
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.debts.push({ id: data.nextId++, debtor, reason: reason + ' (还款)', amount, date, type: 'repay' });
-        saveToFirebase();
-        render();
-        isSyncing = false;
+        saveToFirebase(); render(); isSyncing = false;
         document.getElementById('debtAmount').value = '';
-        document.getElementById('debtorName').focus();
+    }
+
+    function addIncome() {
+        const source = document.getElementById('incomeSource').value.trim() || '工资';
+        const category = document.getElementById('incomeCategory').value;
+        const amount = parseFloat(document.getElementById('incomeAmount').value);
+        const date = document.getElementById('incomeDate').value || new Date().toISOString().slice(0,10);
+        if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
+        isSyncing = true;
+        data.incomes.push({ id: data.nextId++, source, category, amount, date });
+        saveToFirebase(); render(); isSyncing = false;
+        document.getElementById('incomeAmount').value = '';
     }
 
     function addExpense() {
         const payer = document.getElementById('expensePayer').value.trim() || '家人';
-        const category = document.getElementById('expenseCategory').value.trim() || '其他';
+        const category = document.getElementById('expenseCategory').value;
         const amount = parseFloat(document.getElementById('expenseAmount').value);
         const date = document.getElementById('expenseDate').value || new Date().toISOString().slice(0,10);
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.expenses.push({ id: data.nextId++, payer, category, amount, date });
-        saveToFirebase();
-        render();
-        isSyncing = false;
+        saveToFirebase(); render(); isSyncing = false;
         document.getElementById('expenseAmount').value = '';
-        document.getElementById('expensePayer').focus();
     }
 
     function resetData() {
         if (confirm('确定删除所有数据？此操作会同步到所有设备！')) {
-            data = { debts: [], expenses: [], nextId: 1 };
-            saveToFirebase();
-            render();
+            data = { debts: [], incomes: [], expenses: [], nextId: 1 };
+            saveToFirebase(); render();
         }
     }
+
+    // 选项卡切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(this.dataset.tab).classList.add('active');
+        });
+    });
 
     // 绑定事件
     document.getElementById('addDebtBtn').addEventListener('click', addDebt);
     document.getElementById('addRepayBtn').addEventListener('click', addRepay);
+    document.getElementById('addIncomeBtn').addEventListener('click', addIncome);
     document.getElementById('addExpenseBtn').addEventListener('click', addExpense);
     document.getElementById('resetBtn').addEventListener('click', resetData);
 
-    // 回车快捷
     document.getElementById('debtAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addDebt(); });
+    document.getElementById('incomeAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addIncome(); });
     document.getElementById('expenseAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addExpense(); });
 
     // 初始化日期
     const today = new Date().toISOString().slice(0,10);
-    if (!document.getElementById('debtDate').value) document.getElementById('debtDate').value = today;
-    if (!document.getElementById('expenseDate').value) document.getElementById('expenseDate').value = today;
+    ['debtDate', 'incomeDate', 'expenseDate'].forEach(id => {
+        if (!document.getElementById(id).value) document.getElementById(id).value = today;
+    });
 
-    // 启动
     loadFromFirebase();
     listenChanges();
-
-    console.log('✅ 家庭记账已启动 (简化版)');
+    console.log('✅ 家庭记账 (收支版) 已启动');
 </script>
 </body>
 </html>
