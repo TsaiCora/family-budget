@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>家庭记账 · 共填欠债还款</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background: #f7f9fc;
+            padding: 20px 12px 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+        .app-container {
+            max-width: 720px;
+            width: 100%;
+            background: white;
+            border-radius: 36px 36px 28px 28px;
+            box-shadow: 0 20px 40px rgba(0, 10, 30, 0.08), 0 6px 16px rgba(0, 0, 0, 0.02);
+            padding: 24px 20px 32px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: #0b1b33;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        h1 i { color: #2a7de1; font-size: 28px; }
+        .subhead {
+            color: #5b6f8c;
+            font-size: 15px;
+            font-weight: 400;
+            margin-bottom: 24px;
+            border-left: 3px solid #2a7de1;
+            padding-left: 14px;
+            background: #f0f4fe;
+            border-radius: 0 12px 12px 0;
+            line-height: 1.5;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            background: #f0f5ff;
+            padding: 16px 12px;
+            border-radius: 28px;
+            margin-bottom: 28px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.02);
+        }
+        .summary-item { text-align: center; }
+        .summary-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #4f658a;
+            letter-spacing: 0.3px;
+        }
+        .summary-item .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0b1b33;
+            margin-top: 4px;
+        }
+        .summary-item .value.positive { color: #1e7e34; }
+        .summary-item .value.negative { color: #c53e3e; }
+        .summary-item .value.neutral { color: #2a4b7a; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2b44;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 28px 0 16px 0;
+            flex-wrap: wrap;
+        }
+        .section-title i { color: #2a7de1; width: 24px; text-align: center; }
+        .section-title .badge {
+            background: #dbe7f9;
+            color: #1f3a6b;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 2px 12px;
+            border-radius: 40px;
+            margin-left: 6px;
+        }
+        .section-title .toolbar {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 12px rgba(0, 20, 40, 0.04);
+            border: 1px solid #e8edf5;
+            transition: 0.2s;
+            margin-bottom: 18px;
+        }
+        .debt-item, .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eef2f9;
+        }
+        .debt-item:last-child, .expense-item:last-child { border-bottom: none; }
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        .item-title {
+            font-weight: 600;
+            color: #14273e;
+            font-size: 16px;
+        }
+        .item-meta {
+            font-size: 13px;
+            color: #6a7f9e;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .item-meta i { margin-right: 4px; width: 16px; color: #4d6a95; }
+        .item-amount {
+            font-weight: 650;
+            font-size: 17px;
+            letter-spacing: -0.2px;
+            white-space: nowrap;
+        }
+        .item-amount.positive { color: #1e7e34; }
+        .item-amount.negative { color: #b13e3e; }
+        .item-amount.neutral { color: #2e4f7a; }
+
+        .empty-message {
+            color: #8a9bb8;
+            font-size: 15px;
+            padding: 12px 0 6px;
+            text-align: center;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 8px;
+            margin: 12px 0 6px;
+        }
+        .form-group {
+            flex: 1 0 calc(50% - 8px);
+            min-width: 150px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #2d4468;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d8e0ec;
+            border-radius: 18px;
+            font-size: 15px;
+            background: white;
+            transition: 0.2s;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #2a7de1;
+            box-shadow: 0 0 0 3px rgba(42, 125, 225, 0.15);
+        }
+        .form-group .category-select-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .form-group .category-select-wrapper select {
+            flex: 1;
+        }
+        .btn-icon-only {
+            background: #eef3fc;
+            border: 1px solid #d8e0ec;
+            border-radius: 40px;
+            padding: 10px 14px;
+            font-size: 16px;
+            color: #1f3a6b;
+            cursor: pointer;
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+        .btn-icon-only:hover { background: #dce6f5; }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .btn {
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.15s;
+            flex: 1 0 auto;
+            background: #eef3fc;
+            color: #1d3a66;
+        }
+        .btn-primary {
+            background: #1a3f77;
+            color: white;
+            box-shadow: 0 4px 8px rgba(26, 63, 119, 0.15);
+        }
+        .btn-primary:hover { background: #12315e; transform: scale(0.97); }
+        .btn-success {
+            background: #1b7e3a;
+            color: white;
+            box-shadow: 0 4px 8px rgba(27, 126, 58, 0.15);
+        }
+        .btn-success:hover { background: #13662e; transform: scale(0.97); }
+        .btn-danger { background: #b13e3e; color: white; }
+        .btn-danger:hover { background: #942f2f; transform: scale(0.97); }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #c6d3e8;
+        }
+        .btn-outline:hover { background: #eaf0fa; }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+            flex: 0 1 auto;
+        }
+        .action-icon {
+            background: transparent;
+            border: none;
+            color: #687c9e;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 30px;
+            transition: 0.1s;
+        }
+        .action-icon:hover { background: #e9eff8; color: #1f3f6b; }
+
+        .category-edit-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(3px);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            padding: 20px;
+        }
+        .category-edit-modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            max-width: 420px;
+            width: 100%;
+            border-radius: 36px;
+            padding: 28px 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            animation: slideUp 0.2s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0.6; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-content h3 i { color: #2a7de1; }
+        .category-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .category-tag {
+            background: #eef3fc;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .category-tag .del-cat {
+            color: #b13e3e;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 0 4px;
+        }
+        .category-tag .del-cat:hover { color: #7a2a2a; }
+        .modal-input-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .modal-input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d8e0ec;
+            border-radius: 40px;
+            font-size: 15px;
+            outline: none;
+        }
+        .modal-input-row input:focus { border-color: #2a7de1; box-shadow: 0 0 0 3px rgba(42,125,225,0.15); }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+            justify-content: flex-end;
+        }
+        .footer-tip {
+            margin-top: 28px;
+            color: #6d83a5;
+            font-size: 13px;
+            text-align: center;
+            border-top: 1px solid #e4ebf5;
+            padding-top: 20px;
+        }
+        .footer-tip i { color: #2a7de1; }
+
+        @media (max-width: 480px) {
+            .summary-grid { grid-template-columns: 1fr 1fr; }
+            .form-group { flex: 1 0 100%; }
+            .btn-group .btn { flex: 1 0 100%; }
+            .section-title .toolbar { margin-left: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app">
+    <header>
+        <h1><i class="fas fa-wallet"></i> 家庭共记</h1>
+        <div class="subhead">
+            <i class="fas fa-users" style="margin-right: 8px;"></i> 家人共同填写 · 欠债还款 · 控制支出
+        </div>
+    </header>
+
+    <!-- 汇总 -->
+    <div class="summary-grid">
+        <div class="summary-item"><div class="label"><i class="fas fa-hand-holding-usd"></i> 总欠债</div><div class="value negative" id="totalDebt">0</div></div>
+        <div class="summary-item"><div class="label"><i class="fas fa-undo-alt"></i> 待还款</div><div class="value neutral" id="totalRepay">0</div></div>
+        <div class="summary-item"><div class="label"><i class="fas fa-shopping-cart"></i> 总支出</div><div class="value positive" id="totalExpense">0</div></div>
+    </div>
+
+    <!-- 欠债模块 -->
+    <div class="section-title">
+        <i class="fas fa-file-invoice"></i> 欠债 & 还款
+        <span class="badge" id="debtCount">0</span>
+    </div>
+    <div class="card" id="debtList">
+        <div id="debtItemsContainer"><div class="empty-message"><i class="fas fa-circle-plus"></i> 暂无欠债记录</div></div>
+    </div>
+
+    <!-- 欠债表单 -->
+    <div class="card" style="background: #f6faff; border-color: #d4e2fa;">
+        <div class="form-row">
+            <div class="form-group"><label><i class="fas fa-user"></i> 欠款人</label><input type="text" id="debtorName" placeholder="例: 小明" value="家人"></div>
+            <div class="form-group"><label><i class="fas fa-tag"></i> 事由</label><input type="text" id="debtReason" placeholder="买家电/学费" value="日常"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label><i class="fas fa-dollar-sign"></i> 金额 (元)</label><input type="number" id="debtAmount" placeholder="0" min="0.01" step="0.01" value="100"></div>
+            <div class="form-group"><label><i class="fas fa-calendar-alt"></i> 日期</label><input type="date" id="debtDate"></div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" id="addDebtBtn"><i class="fas fa-plus-circle"></i> 新增欠债</button>
+            <button class="btn btn-success" id="addRepayBtn"><i class="fas fa-hand-holding-heart"></i> 记录还款</button>
+        </div>
+        <div style="margin-top: 10px; font-size: 13px; color: #4b6b92; background: #e9f0fa; padding: 6px 14px; border-radius: 40px; display: inline-block;">
+            <i class="fas fa-info-circle"></i> 还款将减少欠债总额
+        </div>
+    </div>
+
+    <!-- 支出模块 (类别可编辑) -->
+    <div class="section-title">
+        <i class="fas fa-receipt"></i> 日常支出
+        <span class="badge" id="expenseCount">0</span>
+        <div class="toolbar">
+            <button class="btn-icon-only" id="editCategoriesBtn"><i class="fas fa-pen"></i> 编辑类别</button>
+        </div>
+    </div>
+    <div class="card" id="expenseList">
+        <div id="expenseItemsContainer"><div class="empty-message"><i class="fas fa-circle-plus"></i> 暂无支出记录</div></div>
+    </div>
+
+    <!-- 支出表单 -->
+    <div class="card" style="background: #f6faff; border-color: #d4e2fa;">
+        <div class="form-row">
+            <div class="form-group"><label><i class="fas fa-user"></i> 支出人</label><input type="text" id="expensePayer" placeholder="例: 妈妈" value="家人"></div>
+            <div class="form-group">
+                <label><i class="fas fa-shopping-bag"></i> 类别</label>
+                <div class="category-select-wrapper">
+                    <select id="expenseCategorySelect"></select>
+                    <button class="btn-icon-only" id="quickAddCategoryBtn" title="快速添加类别"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label><i class="fas fa-dollar-sign"></i> 金额 (元)</label><input type="number" id="expenseAmount" placeholder="0" min="0.01" step="0.01" value="50"></div>
+            <div class="form-group"><label><i class="fas fa-calendar-alt"></i> 日期</label><input type="date" id="expenseDate"></div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" id="addExpenseBtn"><i class="fas fa-plus-circle"></i> 添加支出</button>
+        </div>
+    </div>
+
+    <!-- 底部 -->
+    <div style="display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;">
+        <button class="btn btn-outline btn-sm" id="resetDataBtn"><i class="fas fa-trash-alt"></i> 重置所有数据</button>
+        <span style="margin-left: auto; font-size: 13px; color: #7b90ae; align-self: center;"><i class="fas fa-database"></i> 数据自动保存</span>
+    </div>
+    <div class="footer-tip"><i class="fas fa-users-cog"></i> 家人共用 · 所有记录共同可见</div>
+</div>
+
+<!-- 类别编辑弹窗 -->
+<div class="category-edit-modal" id="categoryModal">
+    <div class="modal-content">
+        <h3><i class="fas fa-tags"></i> 编辑支出类别</h3>
+        <p style="color: #4f658a; font-size: 14px; margin-bottom: 6px;">点击 <i class="fas fa-times" style="color: #b13e3e;"></i> 删除类别，下方添加新类别</p>
+        <div class="category-tag-list" id="categoryTagList"></div>
+        <div class="modal-input-row">
+            <input type="text" id="newCategoryInput" placeholder="输入新类别名称" maxlength="20">
+            <button class="btn btn-primary" id="addCategoryModalBtn" style="padding: 10px 20px; flex: 0 0 auto;"><i class="fas fa-plus"></i> 添加</button>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="closeModalBtn" style="flex: 0;">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- 存储 key -----
+        const STORAGE_KEY = 'family_debt_expense_data_v2';
+        const CATEGORY_STORAGE_KEY = 'family_expense_categories';
+
+        // ----- 默认类别 (内置) -----
+        const DEFAULT_CATEGORIES = ['餐饮', '购物', '交通', '娱乐', '医疗', '教育', '人情', '服饰', '日用品', '其他'];
+
+        // ----- 读取/写入类别 -----
+        function loadCategories() {
+            try {
+                const raw = localStorage.getItem(CATEGORY_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch (e) {}
+            // 返回默认类别深拷贝
+            return [...DEFAULT_CATEGORIES];
+        }
+
+        function saveCategories(categories) {
+            localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+        }
+
+        // ----- 数据读写 (欠债+支出) -----
+        function getDefaultData() {
+            return { debts: [], expenses: [], nextId: 1 };
+        }
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.debts && parsed.expenses && typeof parsed.nextId === 'number') {
+                        return parsed;
+                    }
+                }
+            } catch (e) {}
+            return getDefaultData();
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // ----- 全局状态 -----
+        let appData = loadData();
+        let categories = loadCategories();
+
+        // ----- DOM 引用 -----
+        const debtContainer = document.getElementById('debtItemsContainer');
+        const expenseContainer = document.getElementById('expenseItemsContainer');
+        const totalDebtEl = document.getElementById('totalDebt');
+        const totalRepayEl = document.getElementById('totalRepay');
+        const totalExpenseEl = document.getElementById('totalExpense');
+        const debtCountEl = document.getElementById('debtCount');
+        const expenseCountEl = document.getElementById('expenseCount');
+
+        const debtorName = document.getElementById('debtorName');
+        const debtReason = document.getElementById('debtReason');
+        const debtAmount = document.getElementById('debtAmount');
+        const debtDate = document.getElementById('debtDate');
+
+        const expensePayer = document.getElementById('expensePayer');
+        const expenseCategorySelect = document.getElementById('expenseCategorySelect');
+        const expenseAmount = document.getElementById('expenseAmount');
+        const expenseDate = document.getElementById('expenseDate');
+
+        const addDebtBtn = document.getElementById('addDebtBtn');
+        const addRepayBtn = document.getElementById('addRepayBtn');
+        const addExpenseBtn = document.getElementById('addExpenseBtn');
+        const resetBtn = document.getElementById('resetDataBtn');
+        const editCategoriesBtn = document.getElementById('editCategoriesBtn');
+        const categoryModal = document.getElementById('categoryModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const categoryTagList = document.getElementById('categoryTagList');
+        const newCategoryInput = document.getElementById('newCategoryInput');
+        const addCategoryModalBtn = document.getElementById('addCategoryModalBtn');
+        const quickAddCategoryBtn = document.getElementById('quickAddCategoryBtn');
+
+        // ----- 设置默认日期 -----
+        function setDefaultDates() {
+            const today = new Date().toISOString().slice(0,10);
+            if (!debtDate.value) debtDate.value = today;
+            if (!expenseDate.value) expenseDate.value = today;
+        }
+        setDefaultDates();
+
+        // ----- 渲染类别下拉 -----
+        function renderCategorySelect() {
+            const currentVal = expenseCategorySelect.value;
+            expenseCategorySelect.innerHTML = '';
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                expenseCategorySelect.appendChild(opt);
+            });
+            // 如果当前值还在列表中则保留，否则选第一个
+            if (categories.includes(currentVal)) {
+                expenseCategorySelect.value = currentVal;
+            } else if (categories.length > 0) {
+                expenseCategorySelect.value = categories[0];
+            }
+        }
+
+        // ----- 渲染所有 -----
+        function renderAll() {
+            renderDebts();
+            renderExpenses();
+            updateSummary();
+            debtCountEl.textContent = appData.debts.length;
+            expenseCountEl.textContent = appData.expenses.length;
+            renderCategorySelect();
+        }
+
+        // ----- 渲染欠债 -----
+        function renderDebts() {
+            if (appData.debts.length === 0) {
+                debtContainer.innerHTML = `<div class="empty-message"><i class="fas fa-circle-plus"></i> 暂无欠债记录，添加一笔</div>`;
+                return;
+            }
+            let html = '';
+            const sorted = [...appData.debts].sort((a,b) => (a.date < b.date ? 1 : -1));
+            for (let debt of sorted) {
+                const amountNum = parseFloat(debt.amount) || 0;
+                const sign = debt.type === 'repay' ? '-' : '+';
+                const amountClass = debt.type === 'repay' ? 'positive' : 'negative';
+                const icon = debt.type === 'repay' ? 'fa-hand-holding-heart' : 'fa-hand-holding-usd';
+                const label = debt.type === 'repay' ? '还款' : '欠债';
+                html += `
+                    <div class="debt-item" data-id="${debt.id}">
+                        <div class="item-left">
+                            <div class="item-title"><i class="fas ${icon}" style="margin-right:6px; color:#2a7de1;"></i>${debt.debtor || '无名'} · ${debt.reason || '无备注'}</div>
+                            <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${debt.date || '未设'}</span><span><i class="fas fa-tag"></i>${label}</span></div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="item-amount ${amountClass}">${sign} ¥${amountNum.toFixed(2)}</span>
+                            <button class="action-icon" data-id="${debt.id}" data-action="deleteDebt"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            debtContainer.innerHTML = html;
+            debtContainer.querySelectorAll('[data-action="deleteDebt"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = parseInt(this.dataset.id);
+                    if (confirm('确定删除此条记录吗？')) deleteDebtById(id);
+                });
+            });
+        }
+
+        // ----- 渲染支出 -----
+        function renderExpenses() {
+            if (appData.expenses.length === 0) {
+                expenseContainer.innerHTML = `<div class="empty-message"><i class="fas fa-circle-plus"></i> 暂无支出记录</div>`;
+                return;
+            }
+            let html = '';
+            const sorted = [...appData.expenses].sort((a,b) => (a.date < b.date ? 1 : -1));
+            for (let exp of sorted) {
+                const amountNum = parseFloat(exp.amount) || 0;
+                html += `
+                    <div class="expense-item" data-id="${exp.id}">
+                        <div class="item-left">
+                            <div class="item-title"><i class="fas fa-user" style="margin-right:6px; color:#2a7de1;"></i>${exp.payer || '未知'} · ${exp.category || '其他'}</div>
+                            <div class="item-meta"><span><i class="fas fa-calendar-day"></i>${exp.date || '未设'}</span></div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="item-amount positive">- ¥${amountNum.toFixed(2)}</span>
+                            <button class="action-icon" data-id="${exp.id}" data-action="deleteExpense"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            expenseContainer.innerHTML = html;
+            expenseContainer.querySelectorAll('[data-action="deleteExpense"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = parseInt(this.dataset.id);
+                    if (confirm('删除此支出记录？')) deleteExpenseById(id);
+                });
+            });
+        }
+
+        // ----- 删除 -----
+        function deleteDebtById(id) {
+            appData.debts = appData.debts.filter(d => d.id !== id);
+            saveData(appData);
+            renderAll();
+        }
+        function deleteExpenseById(id) {
+            appData.expenses = appData.expenses.filter(e => e.id !== id);
+            saveData(appData);
+            renderAll();
+        }
+
+        // ----- 汇总 -----
+        function updateSummary() {
+            let totalDebt = 0, totalRepay = 0;
+            for (let d of appData.debts) {
+                const amt = parseFloat(d.amount) || 0;
+                if (d.type === 'debt') totalDebt += amt;
+                else if (d.type === 'repay') totalRepay += amt;
+            }
+            const netDebt = totalDebt - totalRepay;
+            const totalExpense = appData.expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+            totalDebtEl.textContent = `¥${netDebt.toFixed(2)}`;
+            totalRepayEl.textContent = `¥${totalRepay.toFixed(2)}`;
+            totalExpenseEl.textContent = `¥${totalExpense.toFixed(2)}`;
+        }
+
+        // ----- 添加欠债 -----
+        function addDebt() {
+            const debtor = debtorName.value.trim() || '家人';
+            const reason = debtReason.value.trim() || '未备注';
+            const amount = parseFloat(debtAmount.value);
+            const date = debtDate.value || new Date().toISOString().slice(0,10);
+            if (isNaN(amount) || amount <= 0) { alert('请输入有效金额'); return; }
+            appData.debts.push({ id: appData.nextId++, debtor, reason, amount, date, type: 'debt' });
+            saveData(appData);
+            renderAll();
+            debtAmount.value = '';
+            debtReason.value = '日常';
+            setDefaultDates();
+            debtorName.focus();
+        }
+
+        // ----- 添加还款 -----
+        function addRepay() {
+            const debtor = debtorName.value.trim() || '家人';
+            const reason = debtReason.value.trim() || '还款';
+            const amount = parseFloat(debtAmount.value);
+            const date = debtDate.value || new Date().toISOString().slice(0,10);
+            if (isNaN(amount) || amount <= 0) { alert('请输入有效还款金额'); return; }
+            const totalDebt = appData.debts.reduce((sum, d) => sum + (d.type === 'debt' ? parseFloat(d.amount) || 0 : 0), 0);
+            const totalRepay = appData.debts.reduce((sum, d) => sum + (d.type === 'repay' ? parseFloat(d.amount) || 0 : 0), 0);
+            const netDebt = totalDebt - totalRepay;
+            if (amount > netDebt && netDebt > 0) {
+                if (!confirm(`当前净欠债 ¥${netDebt.toFixed(2)}，还款 ¥${amount.toFixed(2)} 超出。仍然记录？`)) return;
+            } else if (netDebt <= 0 && amount > 0) {
+                if (!confirm('当前没有净欠债，确定记录还款吗？')) return;
+            }
+            appData.debts.push({ id: appData.nextId++, debtor, reason: reason + ' (还款)', amount, date, type: 'repay' });
+            saveData(appData);
+            renderAll();
+            debtAmount.value = '';
+            debtReason.value = '日常';
+            setDefaultDates();
+            debtorName.focus();
+        }
+
+        // ----- 添加支出 -----
+        function addExpense() {
+            const payer = expensePayer.value.trim() || '家人';
+            const category = expenseCategorySelect.value || '其他';
+            const amount = parseFloat(expenseAmount.value);
+            const date = expenseDate.value || new Date().toISOString().slice(0,10);
+            if (isNaN(amount) || amount <= 0) { alert('请输入有效支出金额'); return; }
+            appData.expenses.push({ id: appData.nextId++, payer, category, amount, date });
+            saveData(appData);
+            renderAll();
+            expenseAmount.value = '';
+            setDefaultDates();
+            expensePayer.focus();
+        }
+
+        // ----- 重置 -----
+        function resetData() {
+            if (confirm('⚠️ 确定删除所有记账数据？不可撤销。')) {
+                appData = getDefaultData();
+                saveData(appData);
+                renderAll();
+                setDefaultDates();
+            }
+        }
+
+        // ----- 类别编辑弹窗 -----
+        function openCategoryModal() {
+            renderCategoryTagList();
+            categoryModal.classList.add('active');
+        }
+        function closeCategoryModal() {
+            categoryModal.classList.remove('active');
+        }
+        function renderCategoryTagList() {
+            categoryTagList.innerHTML = '';
+            categories.forEach(cat => {
+                const span = document.createElement('span');
+                span.className = 'category-tag';
+                span.innerHTML = `${cat} <span class="del-cat" data-cat="${cat}"><i class="fas fa-times"></i></span>`;
+                categoryTagList.appendChild(span);
+            });
+            // 删除事件
+            categoryTagList.querySelectorAll('.del-cat').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const cat = this.dataset.cat;
+                    if (categories.length <= 1) { alert('至少保留一个类别'); return; }
+                    if (confirm(`删除类别 “${cat}” ？`)) {
+                        categories = categories.filter(c => c !== cat);
+                        saveCategories(categories);
+                        renderCategoryTagList();
+                        renderCategorySelect();
+                        // 如果删除的是当前选中，自动选第一个
+                        if (!categories.includes(expenseCategorySelect.value) && categories.length > 0) {
+                            expenseCategorySelect.value = categories[0];
+                        }
+                    }
+                });
+            });
+        }
+
+        function addNewCategoryFromModal() {
+            const name = newCategoryInput.value.trim();
+            if (!name) { alert('请输入类别名称'); return; }
+            if (categories.includes(name)) { alert('类别已存在'); return; }
+            categories.push(name);
+            saveCategories(categories);
+            newCategoryInput.value = '';
+            renderCategoryTagList();
+            renderCategorySelect();
+            expenseCategorySelect.value = name;
+        }
+
+        // 快速添加类别 (下拉旁)
+        function quickAddCategory() {
+            const name = prompt('输入新支出类别：');
+            if (name && name.trim()) {
+                const trimmed = name.trim();
+                if (categories.includes(trimmed)) { alert('类别已存在'); return; }
+                categories.push(trimmed);
+                saveCategories(categories);
+                renderCategorySelect();
+                expenseCategorySelect.value = trimmed;
+            }
+        }
+
+        // ----- 绑定事件 -----
+        addDebtBtn.addEventListener('click', addDebt);
+        addRepayBtn.addEventListener('click', addRepay);
+        addExpenseBtn.addEventListener('click', addExpense);
+        resetBtn.addEventListener('click', resetData);
+        editCategoriesBtn.addEventListener('click', openCategoryModal);
+        closeModalBtn.addEventListener('click', closeCategoryModal);
+        categoryModal.addEventListener('click', function(e) {
+            if (e.target === categoryModal) closeCategoryModal();
+        });
+        addCategoryModalBtn.addEventListener('click', addNewCategoryFromModal);
+        newCategoryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addNewCategoryFromModal();
+        });
+        quickAddCategoryBtn.addEventListener('click', quickAddCategory);
+
+        // 回车快捷
+        document.getElementById('debtAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addDebt(); });
+        document.getElementById('expenseAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addExpense(); });
+
+        // 初始化
+        renderAll();
+        setDefaultDates();
+        // 确保类别下拉有值
+        if (categories.length > 0 && !expenseCategorySelect.value) {
+            expenseCategorySelect.value = categories[0];
+        }
+        console.log('家庭记账已启动 (类别可编辑)');
+    })();
+</script>
+</body>
+</html>
