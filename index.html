@@ -74,21 +74,18 @@
     <header>
         <h1><i class="fas fa-cloud"></i> 家庭共记 · 云同步</h1>
         <div class="subhead"><i class="fas fa-users" style="margin-right:8px;"></i> 家人共同填写 · 自动云端同步</div>
-        <!-- 同步状态 -->
         <div class="sync-status" id="syncStatus">
             <span class="dot online" id="syncDot"></span>
             <span id="syncText">已连接 · 实时同步</span>
         </div>
     </header>
 
-    <!-- 汇总 -->
     <div class="summary-grid">
         <div class="summary-item"><div class="label"><i class="fas fa-hand-holding-usd"></i> 总欠债</div><div class="value negative" id="totalDebt">0</div></div>
         <div class="summary-item"><div class="label"><i class="fas fa-undo-alt"></i> 已还款</div><div class="value neutral" id="totalRepay">0</div></div>
         <div class="summary-item"><div class="label"><i class="fas fa-shopping-cart"></i> 总支出</div><div class="value positive" id="totalExpense">0</div></div>
     </div>
 
-    <!-- 欠债模块 -->
     <div class="section-title">
         <i class="fas fa-file-invoice"></i> 欠债 & 还款
         <span class="badge" id="debtCount">0</span>
@@ -110,7 +107,6 @@
         </div>
     </div>
 
-    <!-- 支出模块 -->
     <div class="section-title">
         <i class="fas fa-receipt"></i> 日常支出
         <span class="badge" id="expenseCount">0</span>
@@ -138,7 +134,6 @@
         </div>
     </div>
 
-    <!-- 操作栏 -->
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-sync btn-sm" id="syncNowBtn"><i class="fas fa-sync-alt"></i> 立即同步</button>
         <button class="btn btn-outline btn-sm" id="resetDataBtn"><i class="fas fa-trash-alt"></i> 重置</button>
@@ -147,7 +142,6 @@
     <div class="footer-tip"><i class="fas fa-cloud-upload-alt"></i> 数据实时同步 · 所有设备共用一份账本</div>
 </div>
 
-<!-- ============ 引入 Firebase ============ -->
 <script type="importmap">
 {
     "imports": {
@@ -158,13 +152,14 @@
 </script>
 
 <script type="module">
-    // ----- Firebase 配置（您的配置）-----
     import { initializeApp } from "firebase/app";
-    import { getDatabase, ref, set, get, child, onValue, push, update, remove } from "firebase/database";
+    import { getDatabase, ref, set, get, onValue } from "firebase/database";
 
+    // 您的 Firebase 配置（已包含 databaseURL）
     const firebaseConfig = {
         apiKey: "AIzaSyDgRORq3NgVQ4MLTFXBEBmsNIDmdsZ62x4",
         authDomain: "family-budget-7f642.firebaseapp.com",
+        databaseURL: "https://family-budget-7f642-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "family-budget-7f642",
         storageBucket: "family-budget-7f642.firebasestorage.app",
         messagingSenderId: "952662467201",
@@ -175,7 +170,7 @@
     const database = getDatabase(app);
     const DB_PATH = 'familyBudgetData';
 
-    // ----- DOM 引用 -----
+    // DOM 引用
     const debtContainer = document.getElementById('debtItemsContainer');
     const expenseContainer = document.getElementById('expenseItemsContainer');
     const totalDebtEl = document.getElementById('totalDebt');
@@ -199,15 +194,10 @@
     const syncDot = document.getElementById('syncDot');
     const syncText = document.getElementById('syncText');
 
-    // ----- 状态 -----
     let appData = { debts: [], expenses: [], nextId: 1 };
     let categories = ['餐饮', '购物', '交通', '娱乐', '医疗', '教育', '人情', '服饰', '日用品', '其他'];
     let isSyncing = false;
-    let isInitialLoad = true;
 
-    // =============================================
-    // 1. 同步状态显示
-    // =============================================
     function setSyncStatus(status, msg) {
         syncDot.className = 'dot';
         if (status === 'online') { syncDot.classList.add('online'); syncText.textContent = msg || '已连接 · 实时同步'; }
@@ -215,68 +205,9 @@
         else if (status === 'syncing') { syncDot.classList.add('syncing'); syncText.textContent = msg || '同步中...'; }
     }
 
-    // =============================================
-    // 2. 从 Firebase 加载数据
-    // =============================================
-    function loadFromFirebase() {
-        setSyncStatus('syncing', '正在加载数据...');
-        const dbRef = ref(database, DB_PATH);
-        get(dbRef).then((snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                if (data.debts && data.expenses && typeof data.nextId === 'number') {
-                    appData = data;
-                    if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-                        categories = data.categories;
-                    }
-                    renderAll();
-                    setSyncStatus('online', '已同步 · ' + new Date().toLocaleTimeString());
-                } else {
-                    // 数据结构不对，初始化
-                    initializeFirebaseData();
-                }
-            } else {
-                // 首次使用，初始化
-                initializeFirebaseData();
-            }
-            isInitialLoad = false;
-        }).catch((err) => {
-            console.error('加载数据失败:', err);
-            setSyncStatus('offline', '离线模式 · 使用本地缓存');
-            // 尝试从 localStorage 读取
-            loadFromLocalStorage();
-            isInitialLoad = false;
-        });
-    }
-
-    // =============================================
-    // 3. 初始化 Firebase 数据
-    // =============================================
-    function initializeFirebaseData() {
-        const defaultData = {
-            debts: [],
-            expenses: [],
-            nextId: 1,
-            categories: categories
-        };
-        appData = defaultData;
-        saveToFirebase(defaultData);
-        renderAll();
-        setSyncStatus('online', '已初始化 · 开始记账吧！');
-    }
-
-    // =============================================
-    // 4. 保存到 Firebase
-    // =============================================
     function saveToFirebase(data) {
-        const dataToSave = {
-            debts: data.debts || [],
-            expenses: data.expenses || [],
-            nextId: data.nextId || 1,
-            categories: categories
-        };
         setSyncStatus('syncing', '正在保存...');
-        set(ref(database, DB_PATH), dataToSave)
+        set(ref(database, DB_PATH), data)
             .then(() => {
                 setSyncStatus('online', '已保存 · ' + new Date().toLocaleTimeString());
             })
@@ -284,13 +215,40 @@
                 console.error('保存失败:', err);
                 setSyncStatus('offline', '保存失败，请检查网络');
             });
-        // 同时保存到 localStorage 作为缓存
-        localStorage.setItem('family_budget_cache', JSON.stringify(dataToSave));
+        localStorage.setItem('family_budget_cache', JSON.stringify(data));
     }
 
-    // =============================================
-    // 5. 从 localStorage 加载（离线备用）
-    // =============================================
+    function loadFromFirebase() {
+        setSyncStatus('syncing', '正在加载数据...');
+        get(ref(database, DB_PATH)).then((snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                if (data.debts && data.expenses && typeof data.nextId === 'number') {
+                    appData = data;
+                    if (data.categories) categories = data.categories;
+                    renderAll();
+                    setSyncStatus('online', '已同步 · ' + new Date().toLocaleTimeString());
+                } else {
+                    initializeFirebaseData();
+                }
+            } else {
+                initializeFirebaseData();
+            }
+        }).catch((err) => {
+            console.error('加载失败:', err);
+            setSyncStatus('offline', '离线模式 · 使用本地缓存');
+            loadFromLocalStorage();
+        });
+    }
+
+    function initializeFirebaseData() {
+        const defaultData = { debts: [], expenses: [], nextId: 1, categories: categories };
+        appData = defaultData;
+        saveToFirebase(defaultData);
+        renderAll();
+        setSyncStatus('online', '已初始化 · 开始记账吧！');
+    }
+
     function loadFromLocalStorage() {
         try {
             const raw = localStorage.getItem('family_budget_cache');
@@ -304,28 +262,19 @@
                 }
             }
         } catch(e) {}
-        // 没有缓存，使用默认数据
         appData = { debts: [], expenses: [], nextId: 1 };
-        categories = ['餐饮', '购物', '交通', '娱乐', '医疗', '教育', '人情', '服饰', '日用品', '其他'];
         renderAll();
     }
 
-    // =============================================
-    // 6. 实时监听 Firebase 变化
-    // =============================================
     function listenFirebaseChanges() {
-        const dbRef = ref(database, DB_PATH);
-        onValue(dbRef, (snapshot) => {
-            if (snapshot.exists()) {
+        onValue(ref(database, DB_PATH), (snapshot) => {
+            if (snapshot.exists() && !isSyncing) {
                 const data = snapshot.val();
                 if (data.debts && data.expenses && typeof data.nextId === 'number') {
-                    // 避免自己触发自己的更新
-                    if (!isSyncing) {
-                        appData = data;
-                        if (data.categories) categories = data.categories;
-                        renderAll();
-                        setSyncStatus('online', '已更新 · ' + new Date().toLocaleTimeString());
-                    }
+                    appData = data;
+                    if (data.categories) categories = data.categories;
+                    renderAll();
+                    setSyncStatus('online', '已更新 · ' + new Date().toLocaleTimeString());
                 }
             }
         }, (error) => {
@@ -334,9 +283,6 @@
         });
     }
 
-    // =============================================
-    // 7. 渲染函数
-    // =============================================
     function renderAll() {
         renderDebts();
         renderExpenses();
@@ -344,7 +290,6 @@
         debtCountEl.textContent = appData.debts.length;
         expenseCountEl.textContent = appData.expenses.length;
         renderCategorySelect();
-        // 保存到本地缓存
         localStorage.setItem('family_budget_cache', JSON.stringify(appData));
     }
 
@@ -440,9 +385,6 @@
         else if (categories.length > 0) expenseCategorySelect.value = categories[0];
     }
 
-    // =============================================
-    // 8. 操作函数（自动保存到云端）
-    // =============================================
     function saveAndSync(data) {
         isSyncing = true;
         appData = data;
@@ -520,9 +462,7 @@
         if (!expenseDate.value) expenseDate.value = today;
     }
 
-    // =============================================
-    // 9. 绑定事件
-    // =============================================
+    // 绑定事件
     addDebtBtn.addEventListener('click', addDebt);
     addRepayBtn.addEventListener('click', addRepay);
     addExpenseBtn.addEventListener('click', addExpense);
@@ -531,21 +471,18 @@
     document.getElementById('debtAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addDebt(); });
     document.getElementById('expenseAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addExpense(); });
 
-    // 快速添加类别
     document.getElementById('quickAddCategoryBtn').addEventListener('click', function() {
         const name = prompt('输入新支出类别：');
         if (name && name.trim()) {
             const trimmed = name.trim();
             if (categories.includes(trimmed)) { alert('类别已存在'); return; }
             categories.push(trimmed);
-            // 保存类别到 Firebase
             saveToFirebase(appData);
             renderCategorySelect();
             expenseCategorySelect.value = trimmed;
         }
     });
 
-    // 编辑类别（简化版）
     document.getElementById('editCategoriesBtn').addEventListener('click', function() {
         let list = categories.join(', ');
         const newList = prompt('编辑类别（用逗号分隔）：', list);
@@ -562,18 +499,13 @@
         }
     });
 
-    // =============================================
-    // 10. 初始化
-    // =============================================
+    // 初始化
     setDefaultDates();
-
-    // 先尝试从 Firebase 加载，如果失败则从 localStorage 加载
     loadFromFirebase();
-    // 开启实时监听
     listenFirebaseChanges();
 
     console.log('✅ 家庭记账 · 云端同步已启动！');
-    console.log('📊 项目ID: family-budget-7f642');
+    console.log('📊 数据库: family-budget-7f642-default-rtdb');
 </script>
 </body>
 </html>
