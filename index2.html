@@ -17,7 +17,7 @@
         .sync-status .dot.online { background:#1e7e34; }
         .sync-status .dot.syncing { background:#f5a623; animation:pulse 0.8s infinite; }
         @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; background:#f0f5ff; padding:12px 10px; border-radius:28px; margin-bottom:28px; }
+        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; background:#f0f5ff; padding:12px 10px; border-radius:28px; margin-bottom:20px; }
         .summary-item { text-align:center; }
         .summary-item .label { font-size:10px; font-weight:500; color:#4f658a; }
         .summary-item .value { font-size:16px; font-weight:700; color:#0b1b33; margin-top:2px; }
@@ -25,9 +25,20 @@
         .summary-item .value.negative { color:#c53e3e; }
         .summary-item .value.neutral { color:#2a4b7a; }
         .summary-item .value.warning { color:#d48c2c; }
-        .section-title { font-size:18px; font-weight:600; color:#1f2b44; display:flex; align-items:center; gap:10px; margin:24px 0 14px 0; }
+
+        /* 月度汇总卡片 */
+        .monthly-card { background:linear-gradient(135deg,#e8f0fe,#d4e2fa); border-radius:20px; padding:16px 18px; margin-bottom:16px; display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px; }
+        .monthly-card .item { text-align:center; }
+        .monthly-card .item .label { font-size:11px; color:#3a5a7a; }
+        .monthly-card .item .value { font-size:18px; font-weight:700; }
+        .monthly-card .item .value.income { color:#1e7e34; }
+        .monthly-card .item .value.expense { color:#c53e3e; }
+        .monthly-card .item .value.neutral { color:#2a4b7a; }
+
+        .section-title { font-size:18px; font-weight:600; color:#1f2b44; display:flex; align-items:center; gap:10px; margin:24px 0 14px 0; flex-wrap:wrap; }
         .section-title i { color:#2a7de1; width:24px; text-align:center; }
         .section-title .badge { background:#dbe7f9; color:#1f3a6b; font-size:13px; font-weight:500; padding:2px 12px; border-radius:40px; }
+        .section-title .toolbar { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
         .card { background:#ffffff; border-radius:24px; padding:18px 16px; border:1px solid #e8edf5; margin-bottom:16px; }
         .record-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eef2f9; }
         .record-item:last-child { border-bottom:none; }
@@ -67,19 +78,37 @@
         .tab-btn.active { background:white; color:#1a3f77; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
         .tab-content { display:none; }
         .tab-content.active { display:block; }
-        @media (max-width:480px) { .summary-grid { grid-template-columns:1fr 1fr 1fr; } .form-group { flex:1 0 100%; } .btn-group .btn { flex:1 0 100%; } }
         .tag { display:inline-block; font-size:10px; padding:1px 10px; border-radius:30px; font-weight:500; }
         .tag-income { background:#d4edda; color:#1e7e34; }
         .tag-expense { background:#f8dddd; color:#b13e3e; }
         .tag-debt { background:#fce4d6; color:#b13e3e; }
         .tag-repay { background:#d4edda; color:#1e7e34; }
+
+        /* 年度汇总折叠 */
+        .yearly-collapse { background:#f6f9fc; border-radius:16px; padding:12px 16px; margin-top:12px; cursor:pointer; border:1px solid #e8edf5; }
+        .yearly-collapse .header { display:flex; justify-content:space-between; align-items:center; font-weight:600; color:#1f2b44; }
+        .yearly-collapse .header i { transition:0.3s; }
+        .yearly-collapse .header i.open { transform:rotate(180deg); }
+        .yearly-collapse .content { display:none; padding-top:12px; }
+        .yearly-collapse .content.open { display:block; }
+        .yearly-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #e8edf5; font-size:14px; }
+        .yearly-row:last-child { border-bottom:none; }
+        .yearly-row .month { color:#2d4468; font-weight:500; }
+        .yearly-row .in { color:#1e7e34; }
+        .yearly-row .out { color:#c53e3e; }
+
+        .reminder-banner { background:#fff3e0; border-radius:16px; padding:12px 16px; margin-bottom:16px; border-left:4px solid #d48c2c; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .reminder-banner .icon { font-size:24px; color:#d48c2c; }
+        .reminder-banner .text { flex:1; font-size:14px; color:#5a4a2a; }
+
+        @media (max-width:480px) { .summary-grid { grid-template-columns:1fr 1fr 1fr; } .form-group { flex:1 0 100%; } .btn-group .btn { flex:1 0 100%; } .monthly-card { flex-direction:column; align-items:stretch; gap:6px; } .monthly-card .item { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.05); } .monthly-card .item:last-child { border-bottom:none; } }
     </style>
 </head>
 <body>
 <div class="app-container">
     <header>
         <h1><i class="fas fa-cloud"></i> 家庭共记</h1>
-        <div class="subhead"><i class="fas fa-users"></i> 收支 · 欠债 · 云端同步</div>
+        <div class="subhead"><i class="fas fa-users"></i> 收支 · 欠债 · 云端同步 · 智能分析</div>
         <div class="sync-status" id="syncStatus">
             <span class="dot online" id="syncDot"></span>
             <span id="syncText">加载中...</span>
@@ -95,8 +124,28 @@
         <div class="summary-item"><div class="label">实时欠款</div><div class="value negative" id="realTimeDebt">0</div></div>
     </div>
 
+    <!-- 月度汇总 -->
+    <div class="monthly-card" id="monthlyCard">
+        <div class="item"><div class="label">📆 本月</div><div class="value neutral" id="monthLabel">2026-08</div></div>
+        <div class="item"><div class="label">收入</div><div class="value income" id="monthIncome">¥0</div></div>
+        <div class="item"><div class="label">支出</div><div class="value expense" id="monthExpense">¥0</div></div>
+        <div class="item"><div class="label">结余</div><div class="value neutral" id="monthBalance">¥0</div></div>
+    </div>
+
+    <!-- 每日提醒横幅 -->
+    <div class="reminder-banner" id="reminderBanner" style="display:none;">
+        <div class="icon"><i class="fas fa-bell"></i></div>
+        <div class="text" id="reminderText">📊 昨日收支汇总：收入 ¥0，支出 ¥0</div>
+        <button class="btn btn-sm btn-outline" id="dismissReminderBtn">关闭</button>
+    </div>
+
     <!-- 欠债 & 还款 -->
-    <div class="section-title"><i class="fas fa-file-invoice"></i> 欠债 & 还款 <span class="badge" id="debtCount">0</span></div>
+    <div class="section-title">
+        <i class="fas fa-file-invoice"></i> 欠债 & 还款 <span class="badge" id="debtCount">0</span>
+        <div class="toolbar">
+            <button class="btn btn-sm btn-outline" id="testReminderBtn"><i class="fas fa-bell"></i> 测试提醒</button>
+        </div>
+    </div>
     <div class="card"><div id="debtItemsContainer"><div class="empty-message">暂无欠债记录</div></div></div>
 
     <div class="card" style="background:#f6faff;">
@@ -192,6 +241,18 @@
         <button class="btn btn-danger" id="addExpenseBtn"><i class="fas fa-plus-circle"></i> 添加支出</button>
     </div>
 
+    <!-- 年度汇总 -->
+    <div class="section-title"><i class="fas fa-chart-bar"></i> 年度分析</div>
+    <div class="yearly-collapse" id="yearlyToggle">
+        <div class="header">
+            <span><i class="fas fa-calendar-alt"></i> 2026 年每月汇总</span>
+            <i class="fas fa-chevron-down" id="yearlyArrow"></i>
+        </div>
+        <div class="content" id="yearlyContent">
+            <div id="yearlyList"><div class="empty-message">暂无数据</div></div>
+        </div>
+    </div>
+
     <!-- 操作 -->
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" id="resetBtn"><i class="fas fa-trash-alt"></i> 重置</button>
@@ -240,9 +301,25 @@
     const recordCountEl = document.getElementById('recordCount');
     const syncDot = document.getElementById('syncDot');
     const syncText = document.getElementById('syncText');
+    const monthLabel = document.getElementById('monthLabel');
+    const monthIncome = document.getElementById('monthIncome');
+    const monthExpense = document.getElementById('monthExpense');
+    const monthBalance = document.getElementById('monthBalance');
+    const yearlyList = document.getElementById('yearlyList');
+    const reminderBanner = document.getElementById('reminderBanner');
+    const reminderText = document.getElementById('reminderText');
+    const dismissReminderBtn = document.getElementById('dismissReminderBtn');
+    const testReminderBtn = document.getElementById('testReminderBtn');
 
     let data = { debts: [], incomes: [], expenses: [], nextId: 1 };
     let isSyncing = false;
+
+    // ==================== 工具函数 ====================
+    function getToday() { return new Date().toISOString().slice(0,10); }
+    function getMonth() { return getToday().slice(0,7); }
+    function getYear() { return getToday().slice(0,4); }
+
+    function parseDate(d) { return d ? new Date(d + 'T00:00:00') : new Date(); }
 
     function setStatus(msg, type = 'online') {
         syncDot.className = 'dot';
@@ -250,10 +327,23 @@
         syncText.textContent = msg;
     }
 
-    // 计算实时欠款: 总欠债 - 总收入 + 总支出
+    // ==================== 筛选函数 ====================
+    function filterByMonth(items, month) {
+        return items.filter(d => d.date && d.date.startsWith(month));
+    }
+
+    function filterByYear(items, year) {
+        return items.filter(d => d.date && d.date.startsWith(year));
+    }
+
+    function sumAmount(items) {
+        return items.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+    }
+
+    // ==================== 计算实时欠款 ====================
     function calcRealTimeDebt() {
-        const totalIncome = data.incomes.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-        const totalExpense = data.expenses.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const totalIncome = sumAmount(data.incomes);
+        const totalExpense = sumAmount(data.expenses);
         let totalDebt = 0, totalRepay = 0;
         for (let d of data.debts) {
             const amt = parseFloat(d.amount) || 0;
@@ -264,16 +354,21 @@
         return netDebt - totalIncome + totalExpense;
     }
 
+    // ==================== 渲染主函数 ====================
     function render() {
         renderDebts();
         renderIncomes();
         renderExpenses();
         renderAll();
         updateSummary();
+        updateMonthly();
+        updateYearly();
+        updateReminder();
         debtCountEl.textContent = data.debts.length;
         recordCountEl.textContent = data.incomes.length + data.expenses.length;
     }
 
+    // ==================== 渲染各列表 ====================
     function renderDebts() {
         if (data.debts.length === 0) {
             debtContainer.innerHTML = '<div class="empty-message">暂无欠债记录</div>';
@@ -404,9 +499,10 @@
         allContainer.innerHTML = html;
     }
 
+    // ==================== 汇总更新 ====================
     function updateSummary() {
-        const totalIncome = data.incomes.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
-        const totalExpense = data.expenses.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const totalIncome = sumAmount(data.incomes);
+        const totalExpense = sumAmount(data.expenses);
         const net = totalIncome - totalExpense;
         let totalDebt = 0, totalRepay = 0;
         for (let d of data.debts) {
@@ -419,17 +515,108 @@
 
         totalIncomeEl.textContent = `+ ¥${totalIncome.toFixed(2)}`;
         totalExpenseEl.textContent = `- ¥${totalExpense.toFixed(2)}`;
-        // 净收益：正数加 + 号，负数加 - 号
         netAmountEl.textContent = net >= 0 ? `+ ¥${net.toFixed(2)}` : `- ¥${Math.abs(net).toFixed(2)}`;
         netAmountEl.style.color = net >= 0 ? '#1e7e34' : '#c53e3e';
-        // 总欠债显示为负
         totalDebtEl.textContent = `- ¥${netDebt.toFixed(2)}`;
         totalDebtEl.style.color = netDebt > 0 ? '#c53e3e' : '#1e7e34';
-        // 实时欠款显示为负
         realTimeDebtEl.textContent = realTimeDebt > 0 ? `- ¥${realTimeDebt.toFixed(2)}` : `+ ¥${Math.abs(realTimeDebt).toFixed(2)}`;
         realTimeDebtEl.style.color = realTimeDebt > 0 ? '#c53e3e' : '#1e7e34';
     }
 
+    // ==================== 月度分析 ====================
+    function updateMonthly() {
+        const month = getMonth();
+        const monthIncomes = filterByMonth(data.incomes, month);
+        const monthExpenses = filterByMonth(data.expenses, month);
+        const inc = sumAmount(monthIncomes);
+        const exp = sumAmount(monthExpenses);
+        const bal = inc - exp;
+
+        monthLabel.textContent = month.replace('-', '年') + '月';
+        monthIncome.textContent = `¥${inc.toFixed(2)}`;
+        monthExpense.textContent = `¥${exp.toFixed(2)}`;
+        monthBalance.textContent = `¥${bal.toFixed(2)}`;
+        monthBalance.style.color = bal >= 0 ? '#1e7e34' : '#c53e3e';
+    }
+
+    // ==================== 年度分析 ====================
+    function updateYearly() {
+        const year = getYear();
+        const yearIncomes = filterByYear(data.incomes, year);
+        const yearExpenses = filterByYear(data.expenses, year);
+        const months = new Set();
+        yearIncomes.forEach(d => { if (d.date) months.add(d.date.slice(0,7)); });
+        yearExpenses.forEach(d => { if (d.date) months.add(d.date.slice(0,7)); });
+
+        if (months.size === 0) {
+            yearlyList.innerHTML = '<div class="empty-message">暂无数据</div>';
+            return;
+        }
+
+        const sortedMonths = [...months].sort();
+        let html = '';
+        for (let m of sortedMonths) {
+            const inc = sumAmount(filterByMonth(yearIncomes, m));
+            const exp = sumAmount(filterByMonth(yearExpenses, m));
+            const bal = inc - exp;
+            html += `
+                <div class="yearly-row">
+                    <span class="month">${m.replace('-', '年')}月</span>
+                    <span><span class="in">+¥${inc.toFixed(2)}</span> / <span class="out">-¥${exp.toFixed(2)}</span></span>
+                    <span style="font-weight:600;color:${bal>=0?'#1e7e34':'#c53e3e'}">${bal>=0?'+':''}¥${bal.toFixed(2)}</span>
+                </div>
+            `;
+        }
+        yearlyList.innerHTML = html;
+    }
+
+    // ==================== 每日提醒 ====================
+    function updateReminder() {
+        // 检查今天是否已显示过提醒（存在 localStorage 标记）
+        const today = getToday();
+        const dismissed = localStorage.getItem('reminder_dismissed_' + today);
+        if (dismissed === 'true') {
+            reminderBanner.style.display = 'none';
+            return;
+        }
+
+        // 生成提醒内容
+        const totalIncome = sumAmount(data.incomes);
+        const totalExpense = sumAmount(data.expenses);
+        const net = totalIncome - totalExpense;
+        const realDebt = calcRealTimeDebt();
+
+        let msg = `📊 当前总览：总收入 +¥${totalIncome.toFixed(2)}，总支出 -¥${totalExpense.toFixed(2)}`;
+        if (realDebt > 0) {
+            msg += `，实时欠款 -¥${realDebt.toFixed(2)}`;
+        } else {
+            msg += `，已无欠债 👍`;
+        }
+
+        reminderText.textContent = msg;
+        reminderBanner.style.display = 'flex';
+    }
+
+    function showReminder() {
+        const totalIncome = sumAmount(data.incomes);
+        const totalExpense = sumAmount(data.expenses);
+        const realDebt = calcRealTimeDebt();
+        let msg = `📊 当前总览：总收入 +¥${totalIncome.toFixed(2)}，总支出 -¥${totalExpense.toFixed(2)}`;
+        if (realDebt > 0) {
+            msg += `，实时欠款 -¥${realDebt.toFixed(2)}`;
+        } else {
+            msg += `，已无欠债 👍`;
+        }
+        alert(msg);
+    }
+
+    function dismissReminder() {
+        const today = getToday();
+        localStorage.setItem('reminder_dismissed_' + today, 'true');
+        reminderBanner.style.display = 'none';
+    }
+
+    // ==================== Firebase 操作 ====================
     function saveToFirebase() {
         setStatus('正在保存...', 'syncing');
         set(ref(db, '记账数据'), data)
@@ -472,6 +659,7 @@
         });
     }
 
+    // ==================== 操作函数 ====================
     function deleteDebt(id) { data.debts = data.debts.filter(d => d.id !== id); saveToFirebase(); render(); }
     function deleteIncome(id) { data.incomes = data.incomes.filter(d => d.id !== id); saveToFirebase(); render(); }
     function deleteExpense(id) { data.expenses = data.expenses.filter(d => d.id !== id); saveToFirebase(); render(); }
@@ -480,7 +668,7 @@
         const debtor = document.getElementById('debtorName').value.trim() || '家人';
         const reason = document.getElementById('debtReason').value.trim() || '日常';
         const amount = parseFloat(document.getElementById('debtAmount').value);
-        const date = document.getElementById('debtDate').value || new Date().toISOString().slice(0,10);
+        const date = document.getElementById('debtDate').value || getToday();
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.debts.push({ id: data.nextId++, debtor, reason, amount, date, type: 'debt' });
@@ -492,7 +680,7 @@
         const debtor = document.getElementById('debtorName').value.trim() || '家人';
         const reason = document.getElementById('debtReason').value.trim() || '还款';
         const amount = parseFloat(document.getElementById('debtAmount').value);
-        const date = document.getElementById('debtDate').value || new Date().toISOString().slice(0,10);
+        const date = document.getElementById('debtDate').value || getToday();
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.debts.push({ id: data.nextId++, debtor, reason: reason + ' (还款)', amount, date, type: 'repay' });
@@ -504,7 +692,7 @@
         const source = document.getElementById('incomeSource').value.trim() || '工资';
         const category = document.getElementById('incomeCategory').value;
         const amount = parseFloat(document.getElementById('incomeAmount').value);
-        const date = document.getElementById('incomeDate').value || new Date().toISOString().slice(0,10);
+        const date = document.getElementById('incomeDate').value || getToday();
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.incomes.push({ id: data.nextId++, source, category, amount, date });
@@ -516,7 +704,7 @@
         const payer = document.getElementById('expensePayer').value.trim() || '家人';
         const category = document.getElementById('expenseCategory').value;
         const amount = parseFloat(document.getElementById('expenseAmount').value);
-        const date = document.getElementById('expenseDate').value || new Date().toISOString().slice(0,10);
+        const date = document.getElementById('expenseDate').value || getToday();
         if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
         isSyncing = true;
         data.expenses.push({ id: data.nextId++, payer, category, amount, date });
@@ -531,6 +719,7 @@
         }
     }
 
+    // ==================== 事件绑定 ====================
     // 选项卡切换
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -541,7 +730,19 @@
         });
     });
 
-    // 绑定事件
+    // 年度折叠
+    document.getElementById('yearlyToggle').addEventListener('click', function() {
+        const content = document.getElementById('yearlyContent');
+        const arrow = document.getElementById('yearlyArrow');
+        content.classList.toggle('open');
+        arrow.classList.toggle('open');
+    });
+
+    // 提醒
+    dismissReminderBtn.addEventListener('click', dismissReminder);
+    testReminderBtn.addEventListener('click', showReminder);
+
+    // 按钮绑定
     document.getElementById('addDebtBtn').addEventListener('click', addDebt);
     document.getElementById('addRepayBtn').addEventListener('click', addRepay);
     document.getElementById('addIncomeBtn').addEventListener('click', addIncome);
@@ -552,15 +753,40 @@
     document.getElementById('incomeAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addIncome(); });
     document.getElementById('expenseAmount').addEventListener('keypress', (e) => { if (e.key === 'Enter') addExpense(); });
 
-    // 初始化日期
-    const today = new Date().toISOString().slice(0,10);
+    // ==================== 每日定时提醒（每天早上8点） ====================
+    function scheduleDailyReminder() {
+        const now = new Date();
+        const target = new Date();
+        target.setHours(8, 0, 0, 0);
+        if (now > target) {
+            target.setDate(target.getDate() + 1);
+        }
+        const delay = target - now;
+        setTimeout(() => {
+            // 重置今日已关闭标记
+            const today = getToday();
+            localStorage.removeItem('reminder_dismissed_' + today);
+            // 刷新提醒
+            updateReminder();
+            // 继续调度明天的提醒
+            scheduleDailyReminder();
+        }, delay);
+    }
+
+    // ==================== 初始化 ====================
+    const today = getToday();
     ['debtDate', 'incomeDate', 'expenseDate'].forEach(id => {
         if (!document.getElementById(id).value) document.getElementById(id).value = today;
     });
 
     loadFromFirebase();
     listenChanges();
-    console.log('✅ 家庭记账 (收支版) 已启动');
+
+    // 启动每日提醒调度
+    scheduleDailyReminder();
+
+    console.log('✅ 家庭记账 (分析版) 已启动');
+    console.log('📅 每日提醒已设置 (早上8:00)');
 </script>
 </body>
 </html>
