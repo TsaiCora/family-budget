@@ -17,13 +17,14 @@
         .sync-status .dot.online { background:#1e7e34; }
         .sync-status .dot.syncing { background:#f5a623; animation:pulse 0.8s infinite; }
         @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; background:#f0f5ff; padding:14px 12px; border-radius:28px; margin-bottom:28px; }
+        .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; background:#f0f5ff; padding:12px 10px; border-radius:28px; margin-bottom:28px; }
         .summary-item { text-align:center; }
-        .summary-item .label { font-size:11px; font-weight:500; color:#4f658a; }
-        .summary-item .value { font-size:18px; font-weight:700; color:#0b1b33; margin-top:2px; }
+        .summary-item .label { font-size:10px; font-weight:500; color:#4f658a; }
+        .summary-item .value { font-size:16px; font-weight:700; color:#0b1b33; margin-top:2px; }
         .summary-item .value.positive { color:#1e7e34; }
         .summary-item .value.negative { color:#c53e3e; }
         .summary-item .value.neutral { color:#2a4b7a; }
+        .summary-item .value.warning { color:#d48c2c; }
         .section-title { font-size:18px; font-weight:600; color:#1f2b44; display:flex; align-items:center; gap:10px; margin:24px 0 14px 0; }
         .section-title i { color:#2a7de1; width:24px; text-align:center; }
         .section-title .badge { background:#dbe7f9; color:#1f3a6b; font-size:13px; font-weight:500; padding:2px 12px; border-radius:40px; }
@@ -66,7 +67,7 @@
         .tab-btn.active { background:white; color:#1a3f77; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
         .tab-content { display:none; }
         .tab-content.active { display:block; }
-        @media (max-width:480px) { .summary-grid { grid-template-columns:1fr 1fr; } .form-group { flex:1 0 100%; } .btn-group .btn { flex:1 0 100%; } }
+        @media (max-width:480px) { .summary-grid { grid-template-columns:1fr 1fr 1fr; } .form-group { flex:1 0 100%; } .btn-group .btn { flex:1 0 100%; } }
         .tag { display:inline-block; font-size:10px; padding:1px 10px; border-radius:30px; font-weight:500; }
         .tag-income { background:#d4edda; color:#1e7e34; }
         .tag-expense { background:#f8dddd; color:#b13e3e; }
@@ -91,6 +92,7 @@
         <div class="summary-item"><div class="label">总支出</div><div class="value negative" id="totalExpense">0</div></div>
         <div class="summary-item"><div class="label">净收益</div><div class="value neutral" id="netAmount">0</div></div>
         <div class="summary-item"><div class="label">总欠债</div><div class="value negative" id="totalDebt">0</div></div>
+        <div class="summary-item"><div class="label">实时欠款</div><div class="value warning" id="realTimeDebt">0</div></div>
     </div>
 
     <!-- 欠债 & 还款 -->
@@ -233,6 +235,7 @@
     const totalExpenseEl = document.getElementById('totalExpense');
     const netAmountEl = document.getElementById('netAmount');
     const totalDebtEl = document.getElementById('totalDebt');
+    const realTimeDebtEl = document.getElementById('realTimeDebt');
     const debtCountEl = document.getElementById('debtCount');
     const recordCountEl = document.getElementById('recordCount');
     const syncDot = document.getElementById('syncDot');
@@ -245,6 +248,21 @@
         syncDot.className = 'dot';
         if (type === 'syncing') syncDot.className = 'dot syncing';
         syncText.textContent = msg;
+    }
+
+    // 计算实时欠款: 总欠债 - 总收入 + 总支出
+    function calcRealTimeDebt() {
+        const totalIncome = data.incomes.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        const totalExpense = data.expenses.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
+        let totalDebt = 0, totalRepay = 0;
+        for (let d of data.debts) {
+            const amt = parseFloat(d.amount) || 0;
+            if (d.type === 'debt') totalDebt += amt;
+            else if (d.type === 'repay') totalRepay += amt;
+        }
+        const netDebt = totalDebt - totalRepay;
+        // 实时欠款 = 净欠债 - 总收入 + 总支出
+        return netDebt - totalIncome + totalExpense;
     }
 
     function render() {
@@ -396,11 +414,16 @@
             if (d.type === 'debt') totalDebt += amt;
             else if (d.type === 'repay') totalRepay += amt;
         }
+        const netDebt = totalDebt - totalRepay;
+        const realTimeDebt = netDebt - totalIncome + totalExpense;
+
         totalIncomeEl.textContent = `¥${totalIncome.toFixed(2)}`;
         totalExpenseEl.textContent = `¥${totalExpense.toFixed(2)}`;
         netAmountEl.textContent = `¥${net.toFixed(2)}`;
         netAmountEl.style.color = net >= 0 ? '#1e7e34' : '#c53e3e';
-        totalDebtEl.textContent = `¥${(totalDebt - totalRepay).toFixed(2)}`;
+        totalDebtEl.textContent = `¥${netDebt.toFixed(2)}`;
+        realTimeDebtEl.textContent = `¥${realTimeDebt.toFixed(2)}`;
+        realTimeDebtEl.style.color = realTimeDebt > 0 ? '#c53e3e' : '#1e7e34';
     }
 
     function saveToFirebase() {
