@@ -38,7 +38,7 @@
         .item-amount { font-weight:650; font-size:16px; }
         .item-amount.income { color:#1e7e34; }
         .item-amount.expense { color:#c53e3e; }
-        .item-amount.debt { color:#b13e3e; }
+        .item-amount.debt { color:#c53e3e; }
         .item-amount.repay { color:#1e7e34; }
         .empty-message { color:#8a9bb8; font-size:14px; padding:10px 0; text-align:center; }
         .form-row { display:flex; flex-wrap:wrap; gap:10px 6px; margin:10px 0 4px; }
@@ -261,7 +261,6 @@
             else if (d.type === 'repay') totalRepay += amt;
         }
         const netDebt = totalDebt - totalRepay;
-        // 实时欠款 = 净欠债 - 总收入 + 总支出
         return netDebt - totalIncome + totalExpense;
     }
 
@@ -284,10 +283,12 @@
         const sorted = [...data.debts].sort((a,b) => a.date < b.date ? 1 : -1);
         for (let d of sorted) {
             const amt = parseFloat(d.amount) || 0;
-            const sign = d.type === 'repay' ? '-' : '+';
-            const cls = d.type === 'repay' ? 'repay' : 'debt';
-            const icon = d.type === 'repay' ? 'fa-hand-holding-heart' : 'fa-hand-holding-usd';
-            const tag = d.type === 'repay' ? '<span class="tag tag-repay">还款</span>' : '<span class="tag tag-debt">欠债</span>';
+            // 欠债显示为 -，还款显示为 -（但绿色）
+            const isRepay = d.type === 'repay';
+            const sign = isRepay ? '-' : '-';
+            const cls = isRepay ? 'repay' : 'debt';
+            const icon = isRepay ? 'fa-hand-holding-heart' : 'fa-hand-holding-usd';
+            const tag = isRepay ? '<span class="tag tag-repay">还款</span>' : '<span class="tag tag-debt">欠债</span>';
             html += `
                 <div class="record-item" data-id="${d.id}">
                     <div class="item-left">
